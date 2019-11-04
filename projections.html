@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script id="vertex-shader" type="x-shader/x-vertex">
+attribute vec4 vPosition; // inputs
+attribute vec4 vNormal;
+varying vec4 fColor; // output do vertex shader
+uniform mat4 mProjection;
+uniform mat4 mView;
+uniform mat4 mModel;
+void main(){
+    gl_Position = mProjection * mView * mModel * vPosition;
+    fColor = vNormal;
+}
+</script>
+<script id="fragment-shader" type="x-shader/x-fragment">
+precision mediump float;
+varying vec4 fColor; // input do fragment shader
+void main() {
+    //
+    // Changes the color of the triangle
+    //
+    gl_FragColor = fColor;
+}
+</script>
+<script type="text/javascript" src="../Common/webgl-utils.js"></script>
+<script type="text/javascript" src="../Common/initShaders.js"></script>
+<script type="text/javascript" src="../Common/MV.js"></script>
+<script type="text/javascript" src="../Common/cube.js"></script>
+<script type="text/javascript" src="../Common/sphere.js"></script>
+<script type="text/javascript" src="../Common/cylinder.js"></script>
+<script type="text/javascript" src="../Common/torus.js"></script>
+<script type="text/javascript" src="../Common/bunny-data.js"></script>
+<script type="text/javascript" src="../Common/bunny.js"></script>
+<script type="text/javascript" src="projections.js"></script>
+</head>
+<body>
+    <title>Projections</title>
+    <canvas id="gl-canvas">
+        Oops... your browser doesn't support the HTML5 canvas element"
+    </canvas>
+    <p>Use A or D to navigate through primitives.</p>
+    <p>Z- enable Z-buffer</p>
+    <p>B- enable Backface Culling</p>
+    <p>tx:<input type="range" min="-1" max="1" value="0" step="0.1" id="txSlide">ty:<input type="range" min="-1" max="1" value="0" step="0.1" id="tySlide">tz:<input type="range" min="-1" max="1" value="0" step="0.1" id="tzSlide"></p>
+    <p>sx:<input type="range" min="0.05" max="2" value="1" step="0.05" id="sxSlide">sy:<input type="range" min="0.05" max="2" value="1" step="0.05" id="sySlide">sz:<input type="range" min="0.05" max="2" value="1" step="0.05" id="szSlide"></p>
+    <p>rx:<input type="range" min="-180" max="180" value="0" step="0.01" id="rxSlide">ry:<input type="range" min="-180" max="180" value="0" step="0.01" id="rySlide">rz:<input type="range" min="-180" max="180" value="0" step="0.01" id="rzSlide"></p>
+    <p><input type="button" id="submit" value="submit changes"><input type="button" id="reset" value="reset"></p>
+    <p><input type="button" id="removeAll" value="remove all instances"></p>
+</body>
+</html>
