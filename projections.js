@@ -5,25 +5,25 @@ var tx, ty, tz;
 var rx, ry, rz;
 var sx, sy, sz;
 var btnSubmit, btnReset, btnRemoveAll;
+var ortRadio1, ortRadio2, ortRadio3;
 var checkBox, comboBox;
 var currentSelectedPrimitive;
 var uProj, uModel, uView;
 var zBufferEnabled, faceCullingEnabled;
 var program;
+var mProjectionInit = ortho(-2,2,-2,2,10,-10);
+var mProjection;
 var canvas;
 var primitives = [];
 var currentIndex = 0;
 var nrOfPrimitives = 5;
 var wiredOn;
+var aRatio;
 
 
 window.onresize = function (){
-    var height = window.innerHeight;
-    var width = window.innerWidth;
-    var s = Math.min(width, height);
-    canvas.width = width;
-    canvas.height = height;
-    gl.viewport(0,0,width,height);
+    generateViewPort();
+    
 }
 
 window.onload = function init() {
@@ -42,9 +42,14 @@ window.onload = function init() {
     btnSubmit = document.getElementById("submit");
     btnReset = document.getElementById("reset");
     btnRemoveAll = document.getElementById("removeAll");
-
+    document.getElementById("bt2").click();
+    document.getElementById("axoRadio2").click();
+    ortRadio1 = document.getElementById("ortRadio1");
+    ortRadio2 = document.getElementById("ortRadio2");
+    ortRadio3 = document.getElementById("ortRadio3");
     addEventListener("keypress",keyPressed);
 
+    
     tx.addEventListener("input",inputChange);
     ty.addEventListener("input",inputChange);
     tz.addEventListener("input",inputChange);
@@ -55,10 +60,13 @@ window.onload = function init() {
     sy.addEventListener("input",inputChange);
     sz.addEventListener("input",inputChange);
 
+
     btnSubmit.addEventListener("click",addNewInstance);
     btnReset.addEventListener("click",resetCurrent);
     btnRemoveAll.addEventListener("click",removeAllInstances);
-
+    ortRadio1.addEventListener("click",radioClicked);
+    ortRadio2.addEventListener("click",radioClicked);
+    ortRadio3.addEventListener("click",radioClicked);
 
     gl = WebGLUtils.setupWebGL(canvas);
     if(!gl) { alert("WebGL isn't available"); }
@@ -66,10 +74,7 @@ window.onload = function init() {
     initializeObjects();
     fillArrayPrimitives();
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    gl.viewport(0,0,canvas.width, canvas.height/2);
+    generateViewPort();
     gl.clearColor(0.39, 0.39, 0.39, 1.0);
 
 
@@ -81,7 +86,6 @@ window.onload = function init() {
     currentSelectedPrimitive = primitives[currentIndex].w;
     instances.push({t:mat4(),p:currentSelectedPrimitive});
     nInstances++;
-
     // Load shaders and initialize attribute buffers
     program = initShaders(gl, "vertex-shader", "fragment-shader");
     gl.useProgram(program);
@@ -93,6 +97,22 @@ window.onload = function init() {
     uView = gl.getUniformLocation(program, "mView");
 
     render();
+}
+
+function generateViewPort() {
+    var height = window.innerHeight;
+    var width = window.innerWidth;
+    var s = Math.min(width, height/2);
+    aRatio = width / height;
+    if (s == width) {
+        mProjection = ortho(-2, 2, -1 * aRatio, 1 * aRatio, 10, -10);
+    }
+    else {
+        mProjection = ortho(-2 * aRatio, 2 * aRatio, -1, 1, 10, -10);
+    }
+    canvas.width = width;
+    canvas.height = height / 2;
+    gl.viewport(0, 0, width, height / 2);
 }
 
 function initializeObjects(){
@@ -109,6 +129,41 @@ function fillArrayPrimitives(){
     primitives.push({w:cylinderDrawWireFrame,f:cylinderDrawFilled});
     primitives.push({w:torusDrawWireFrame,f:torusDrawFilled});
     primitives.push({w:bunnyDrawWireFrame,f:bunnyDrawFilled});
+}
+
+function radioClicked(evt){
+    switch(evt.target.value){
+        case "principal":
+            var aux = mat4();
+            aux[2][2] = 0;
+            mProjection = mult(aux,mProjectionInit);
+            break;
+        case "principal":
+            break;
+        case "principal":
+            break;
+    }
+}
+
+function showTab(evt,op){
+    // Declare all variables
+    var i, tabcontent, tablinks;
+
+    // Get all elements with class="tabcontent" and hide them
+    tabcontent = document.getElementsByClassName("tabops");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
+
+    // Get all elements with class="tablinks" and remove the class "active"
+    tablinks = document.getElementsByClassName("tablinks");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+
+    // Show the current tab, and add an "active" class to the button that opened the tab
+    document.getElementById(op).style.display = "block";
+    evt.currentTarget.className += " active";
 }
 
 function keyPressed(ev){
@@ -227,8 +282,6 @@ function render() {
     var eye = [1, 1, 1];
     var up = [0, 1, 0];
     mView = lookAt(eye, at, up);
-
-    mProjection = ortho(-2,2,-2,2,10,-10);
     //mProjection = perspective(10,canvas.width/canvas.height,1,100);
     gl.uniformMatrix4fv(uView, false, flatten(mView));
     gl.uniformMatrix4fv(uProj, false, flatten(mProjection));
