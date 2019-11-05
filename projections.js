@@ -13,6 +13,7 @@ var zBufferEnabled, faceCullingEnabled;
 var program;
 var mProjectionInit = ortho(-2,2,-2,2,10,-10);
 var mProjection;
+var mView;
 var canvas;
 var primitives = [];
 var currentIndex = 0;
@@ -95,6 +96,8 @@ window.onload = function init() {
     uProj = gl.getUniformLocation(program, "mProjection");
 
     uView = gl.getUniformLocation(program, "mView");
+    
+    mView =  mat4();
 
     render();
 }
@@ -133,15 +136,44 @@ function fillArrayPrimitives(){
 
 function radioClicked(evt){
     switch(evt.target.value){
+            
+        //Ortogonal
         case "principal":
-            var aux = mat4();
-            aux[2][2] = 0;
-            mProjection = mult(aux,mProjectionInit);
+            ortogonalViews(1);
             break;
-        case "principal":
+        case "plant":
+            ortogonalViews(2);
             break;
-        case "principal":
+        case "rightside":
+            ortogonalViews(3);
             break;
+        //Axonometric
+        case "isometry":
+            auxonometricViews(1);
+            break;
+        case "dimetry":
+            auxonometricViews(2);
+            break;
+        case "trimetry":
+            auxonometricViews(3);
+            break;
+        case "freeA":
+            auxonometricViews(4);
+            break;
+        //Oblique:
+        case "chavalier":
+            obliqueViews(1);
+            break;
+        case "cabinet":
+            obliqueViews(2);
+            break;
+        case "freeO":
+            obliqueViews(3);
+            break;
+        case "perspective":
+            perspectiveView();
+            break;          
+            
     }
 }
 
@@ -274,6 +306,86 @@ function addNewInstance(){
     instances.push({t:mat4(),p:currentSelectedPrimitive});
     nInstances++;
     resetSliders();
+}
+
+//Ortogonal:
+function ortogonalViews(ortoNumb){
+    var auxView = mat4();
+    
+    if(ortoNumb == 1){ // Principal
+        auxView = mView;
+    }
+    else if(ortoNumb == 2){ //RightSide
+        auxView = mult(viewRight, rotateY(-90));
+    }
+    else{//Plant
+        auxView = mult(viewPlant,rotateX(90));
+    }
+    
+    mView = auxView;
+}
+
+//Axonometric:
+function axonometricViews(axoNumb){
+     var auxView = mat4();
+    
+    if(axoNumb == 1){//Isometry
+        auxView = mult(auxView,rotateX(30));
+        auxView = mult(auxView, rotateY(30));
+        
+    }
+    else if(axoNumb == 2){//Dimetry
+        auxView = mult(auxView,rotateX(42));
+        auxView = mult(auxView, rotateY(7));
+    }
+    else if(axoNumb == 3){//Trimetry
+        auxView = mult(auxView,rotateX(54));
+        auxView = mult(auxView, rotateY(23));
+    }
+    else{// FreeA- Gamma and Theta variable
+        auxView = mult(auxView,rotateX(gamma));
+        auxView = mult(auxView, rotateY(theta));
+    }
+    
+    mView = auxView;
+}
+
+//Oblique:
+function obliqueViews(oblNumb){
+    var auxView = mat4();
+    
+    var Mobl= mat4(
+    1.0, 0.0,-l*Math.cos(alpha), 0.0,
+    0.0, 1.0,-l*Math.sin(alpha), 0.0,
+    0.0, 0.0, 1.0, 0.0,
+    0.0, 0.0, 0.0, 1.0
+    );
+    
+    if(oblNumb == 1){ //Chavalier
+        
+    }
+    else if(oblNumb == 2){ //Cabinet
+        
+    }
+    else{ //FreeO
+        auxView = mult( auxView, Mobl );
+    }
+    
+    mView = auxView;
+}
+
+function perspectiveView(){
+    var auxView = mat4();
+    
+    var Mper= mat4(
+    1.0, 0.0, 0.0, 0.0,
+    0.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0,
+    0.0, 0.0, -1/d, 1.0
+    );
+    
+    auxView = mult(auxView, Mper);
+    mView = auxView;
 }
 
 function render() {
