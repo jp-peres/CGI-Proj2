@@ -11,7 +11,12 @@ var currentSelectedPrimitive;
 var uProj, uModel, uView;
 var zBufferEnabled, faceCullingEnabled;
 var program;
-var mProjectionInit = ortho(-2,2,-2,2,10,-10);
+var at = [0, 0, 0];
+var eye = [-1, -1, -1];
+var up = [0, 1, 0];
+var mViewInit = lookAt(eye, at, up);
+var mView = mViewInit;
+var mProjectionInit = ortho(-2, 2, -2, 2, 10, -10);
 var mProjection;
 var canvas;
 var primitives = [];
@@ -21,9 +26,8 @@ var wiredOn;
 var aRatio;
 
 
-window.onresize = function (){
+window.onresize = function () {
     generateViewPort();
-    
 }
 
 window.onload = function init() {
@@ -47,30 +51,30 @@ window.onload = function init() {
     ortRadio1 = document.getElementById("ortRadio1");
     ortRadio2 = document.getElementById("ortRadio2");
     ortRadio3 = document.getElementById("ortRadio3");
-    addEventListener("keypress",keyPressed);
-
-    
-    tx.addEventListener("input",inputChange);
-    ty.addEventListener("input",inputChange);
-    tz.addEventListener("input",inputChange);
-    rx.addEventListener("input",inputChange);
-    ry.addEventListener("input",inputChange);
-    rz.addEventListener("input",inputChange);
-    sx.addEventListener("input",inputChange);
-    sy.addEventListener("input",inputChange);
-    sz.addEventListener("input",inputChange);
+    addEventListener("keypress", keyPressed);
 
 
-    btnSubmit.addEventListener("click",addNewInstance);
-    btnReset.addEventListener("click",resetCurrent);
-    btnRemoveAll.addEventListener("click",removeAllInstances);
-    ortRadio1.addEventListener("click",radioClicked);
-    ortRadio2.addEventListener("click",radioClicked);
-    ortRadio3.addEventListener("click",radioClicked);
+    tx.addEventListener("input", inputChange);
+    ty.addEventListener("input", inputChange);
+    tz.addEventListener("input", inputChange);
+    rx.addEventListener("input", inputChange);
+    ry.addEventListener("input", inputChange);
+    rz.addEventListener("input", inputChange);
+    sx.addEventListener("input", inputChange);
+    sy.addEventListener("input", inputChange);
+    sz.addEventListener("input", inputChange);
+
+
+    btnSubmit.addEventListener("click", addNewInstance);
+    btnReset.addEventListener("click", resetCurrent);
+    btnRemoveAll.addEventListener("click", removeAllInstances);
+    ortRadio1.addEventListener("click", radioClicked);
+    ortRadio2.addEventListener("click", radioClicked);
+    ortRadio3.addEventListener("click", radioClicked);
 
     gl = WebGLUtils.setupWebGL(canvas);
-    if(!gl) { alert("WebGL isn't available"); }
-    
+    if (!gl) { alert("WebGL isn't available"); }
+
     initializeObjects();
     fillArrayPrimitives();
 
@@ -84,14 +88,14 @@ window.onload = function init() {
 
 
     currentSelectedPrimitive = primitives[currentIndex].w;
-    instances.push({t:mat4(),p:currentSelectedPrimitive});
+    instances.push({ t: mat4(), p: currentSelectedPrimitive });
     nInstances++;
     // Load shaders and initialize attribute buffers
     program = initShaders(gl, "vertex-shader", "fragment-shader");
     gl.useProgram(program);
 
     uModel = gl.getUniformLocation(program, "mModel");
-    
+
     uProj = gl.getUniformLocation(program, "mProjection");
 
     uView = gl.getUniformLocation(program, "mView");
@@ -102,7 +106,7 @@ window.onload = function init() {
 function generateViewPort() {
     var height = window.innerHeight;
     var width = window.innerWidth;
-    var s = Math.min(width, height/2);
+    var s = Math.min(width, height / 2);
     aRatio = width / height;
     if (s == width) {
         mProjection = ortho(-2, 2, -1 * aRatio, 1 * aRatio, 10, -10);
@@ -115,7 +119,7 @@ function generateViewPort() {
     gl.viewport(0, 0, width, height / 2);
 }
 
-function initializeObjects(){
+function initializeObjects() {
     cubeInit(gl);
     sphereInit(gl);
     bunnyInit(gl);
@@ -123,29 +127,137 @@ function initializeObjects(){
     cylinderInit(gl);
 }
 
-function fillArrayPrimitives(){
-    primitives.push({w:cubeDrawWireFrame,f:cubeDrawFilled});
-    primitives.push({w:sphereDrawWireFrame,f:sphereDrawFilled});
-    primitives.push({w:cylinderDrawWireFrame,f:cylinderDrawFilled});
-    primitives.push({w:torusDrawWireFrame,f:torusDrawFilled});
-    primitives.push({w:bunnyDrawWireFrame,f:bunnyDrawFilled});
+function fillArrayPrimitives() {
+    primitives.push({ w: cubeDrawWireFrame, f: cubeDrawFilled });
+    primitives.push({ w: sphereDrawWireFrame, f: sphereDrawFilled });
+    primitives.push({ w: cylinderDrawWireFrame, f: cylinderDrawFilled });
+    primitives.push({ w: torusDrawWireFrame, f: torusDrawFilled });
+    primitives.push({ w: bunnyDrawWireFrame, f: bunnyDrawFilled });
 }
 
-function radioClicked(evt){
-    switch(evt.target.value){
+function radioClicked(evt) {
+    switch (evt.target.value) {
+        //Ortogonal
         case "principal":
-            var aux = mat4();
-            aux[2][2] = 0;
-            mProjection = mult(aux,mProjectionInit);
+            ortogonalViews(1);
             break;
-        case "principal":
+        case "rightside":
+            ortogonalViews(2);
             break;
-        case "principal":
+        case "plant":
+            ortogonalViews(3);
+            break;
+        //Axonometric
+        case "isometry":
+            auxonometricViews(1);
+            break;
+        case "dimetry":
+            auxonometricViews(2);
+            break;
+        case "trimetry":
+            auxonometricViews(3);
+            break;
+        case "freeA":
+            auxonometricViews(4);
+            break;
+        //Oblique:
+        case "chavalier":
+            obliqueViews(1);
+            break;
+        case "cabinet":
+            obliqueViews(2);
+            break;
+        case "freeO":
+            obliqueViews(3);
+            break;
+        case "perspective":
+            perspectiveView();
             break;
     }
 }
 
-function showTab(evt,op){
+
+//Ortogonal:
+function ortogonalViews(ortoNumb) {
+    var auxView = mat4();
+    if (ortoNumb == 1) { // Principal
+        auxView = mViewInit;
+        auxView[2][2]=0;
+    }
+    else if (ortoNumb == 2) { //RightSide
+        auxView = mult(mViewInit,rotateY(90));
+    }
+    else {//Plant
+        auxView = mult(rotateX(90),mViewInit);
+    }
+
+    mView = auxView;
+}
+
+//Axonometric:
+function axonometricViews(axoNumb) {
+    var auxView = mat4();
+
+    if (axoNumb == 1) {//Isometry
+        auxView = mult(auxView, rotateX(30));
+        auxView = mult(auxView, rotateY(30));
+
+    }
+    else if (axoNumb == 2) {//Dimetry
+        auxView = mult(auxView, rotateX(42));
+        auxView = mult(auxView, rotateY(7));
+    }
+    else if (axoNumb == 3) {//Trimetry
+        auxView = mult(auxView, rotateX(54));
+        auxView = mult(auxView, rotateY(23));
+    }
+    else {// FreeA- Gamma and Theta variable
+        auxView = mult(auxView, rotateX(gamma));
+        auxView = mult(auxView, rotateY(theta));
+    }
+
+    mView = auxView;
+}
+
+//Oblique:
+function obliqueViews(oblNumb) {
+    var auxView = mat4();
+
+    var Mobl = mat4(
+        1.0, 0.0, -l * Math.cos(alpha), 0.0,
+        0.0, 1.0, -l * Math.sin(alpha), 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0
+    );
+
+    if (oblNumb == 1) { //Chavalier
+
+    }
+    else if (oblNumb == 2) { //Cabinet
+
+    }
+    else { //FreeO
+        auxView = mult(auxView, Mobl);
+    }
+
+    mView = auxView;
+}
+
+function perspectiveView() {
+    var auxView = mat4();
+
+    var Mper = mat4(
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, -1 / d, 1.0
+    );
+
+    auxView = mult(auxView, Mper);
+    mView = auxView;
+}
+
+function showTab(evt, op) {
     // Declare all variables
     var i, tabcontent, tablinks;
 
@@ -166,8 +278,8 @@ function showTab(evt,op){
     evt.currentTarget.className += " active";
 }
 
-function keyPressed(ev){
-    switch(ev.key){
+function keyPressed(ev) {
+    switch (ev.key) {
         case "z":
             zBufferEnabled = !zBufferEnabled;
             zBufferEnabled ? gl.enable(gl.DEPTH_TEST) : gl.disable(gl.DEPTH_TEST);
@@ -178,56 +290,56 @@ function keyPressed(ev){
             break;
         case "w":
             wiredOn = true;
-            instances[nInstances-1].p = primitives[currentIndex].w;
+            instances[nInstances - 1].p = primitives[currentIndex].w;
             break;
         case "f":
             wiredOn = false;
-            instances[nInstances-1].p = primitives[currentIndex].f;
+            instances[nInstances - 1].p = primitives[currentIndex].f;
             break;
         case "a":
-            currentIndex = currentIndex-1 < 0 ? nrOfPrimitives-1 : currentIndex-1;        
-            instances[nInstances-1].p = wiredOn ? primitives[currentIndex].w : primitives[currentIndex].f;
+            currentIndex = currentIndex - 1 < 0 ? nrOfPrimitives - 1 : currentIndex - 1;
+            instances[nInstances - 1].p = wiredOn ? primitives[currentIndex].w : primitives[currentIndex].f;
             break;
         case "d":
-            currentIndex = ((currentIndex+1) % nrOfPrimitives);
-            instances[nInstances-1].p = wiredOn ? primitives[currentIndex].w : primitives[currentIndex].f;
+            currentIndex = ((currentIndex + 1) % nrOfPrimitives);
+            instances[nInstances - 1].p = wiredOn ? primitives[currentIndex].w : primitives[currentIndex].f;
             break;
         case "+":
             near++;
-            mProjection = ortho(-2,2,-2,2,near,far);
+            mProjection = ortho(-2, 2, -2, 2, near, far);
             break;
         case "-":
             near--;
-            mProjection = ortho(-2,2,-2,2,near,far);
+            mProjection = ortho(-2, 2, -2, 2, near, far);
             break;
     }
 }
 
-function changePrimitive(){
-    switch(comboBox.value){
+function changePrimitive() {
+    switch (comboBox.value) {
         case "cube":
-            if (checkBox.checked){
+            if (checkBox.checked) {
                 currentSelectedPrimitive = cubeDrawWireFrame;
                 break;
             }
-            else{
+            else {
                 currentSelectedPrimitive = cubeDrawFilled;
                 break;
             }
         case "sphere":
-                if (checkBox.checked){
-                    currentSelectedPrimitive = sphereDrawWireFrame;
-                    break;
-                }
-                else{
-                    currentSelectedPrimitive = sphereDrawFilled;
-                    break;
-                }
+            if (checkBox.checked) {
+                currentSelectedPrimitive = sphereDrawWireFrame;
+                break;
+            }
+            else {
+                currentSelectedPrimitive = sphereDrawFilled;
+                break;
+            }
     }
-    instances[nInstances-1].p = currentSelectedPrimitive;
+    instances[nInstances - 1].p = currentSelectedPrimitive;
 }
 
-function inputChange(){
+function inputChange() {
     var currTx = Number(tx.value);
     var currTy = Number(ty.value);
     var currTz = Number(tz.value);
@@ -238,19 +350,19 @@ function inputChange(){
     var currSy = Number(sy.value);
     var currSz = Number(sz.value);
     // TODO: Rotacoes corretas perguntar 
-    instances[nInstances-1].t = mult(translate(currTx,currTy,currTz),
-                                    mult(rotateZ(currRz),
-                                    mult(rotateY(currRy),
-                                    mult(rotateX(currRx),
-                                    scalem(currSx,currSy,currSz)))));
+    instances[nInstances - 1].t = mult(translate(currTx, currTy, currTz),
+        mult(rotateZ(currRz),
+            mult(rotateY(currRy),
+                mult(rotateX(currRx),
+                    scalem(currSx, currSy, currSz)))));
 }
 
-function resetCurrent(){
+function resetCurrent() {
     resetSliders();
-    instances[nInstances-1].t = mat4();
+    instances[nInstances - 1].t = mat4();
 }
 
-function resetSliders(){
+function resetSliders() {
     tx.value = 0;
     ty.value = 0;
     tz.value = 0;
@@ -262,32 +374,29 @@ function resetSliders(){
     rz.value = 0;
 }
 
-function removeAllInstances(){
+function removeAllInstances() {
     instances = [];
-    nInstances=0;
-    instances.push({t:mat4(),p:currentSelectedPrimitive});
+    nInstances = 0;
+    instances.push({ t: mat4(), p: currentSelectedPrimitive });
     nInstances++;
     resetSliders();
 }
 
-function addNewInstance(){
-    instances.push({t:mat4(),p:currentSelectedPrimitive});
+function addNewInstance() {
+    instances.push({ t: mat4(), p: currentSelectedPrimitive });
     nInstances++;
     resetSliders();
 }
 
 function render() {
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    var at = [0, 0, 0];
-    var eye = [1, 1, 1];
-    var up = [0, 1, 0];
-    mView = lookAt(eye, at, up);
+    gl.clear(gl.COLOR_BUFFER_BIT || gl.DEPTH_BUFFER_BIT);
+
     //mProjection = perspective(10,canvas.width/canvas.height,1,100);
     gl.uniformMatrix4fv(uView, false, flatten(mView));
     gl.uniformMatrix4fv(uProj, false, flatten(mProjection));
-    for(var i = 0; i < nInstances; i++){
+    for (var i = 0; i < nInstances; i++) {
         gl.uniformMatrix4fv(uModel, false, flatten(instances[i].t));
-        instances[i].p(gl,program);
+        instances[i].p(gl, program);
     }
     requestAnimationFrame(render);
 }
