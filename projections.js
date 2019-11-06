@@ -12,7 +12,7 @@ var uProj, uModel, uView;
 var zBufferEnabled, faceCullingEnabled;
 var program;
 var at = [0, 0, 0];
-var eye = [-1, -1, -1];
+var eye = [1, 1, 1];
 var up = [0, 1, 0];
 var mViewInit = lookAt(eye, at, up);
 var mView = mViewInit;
@@ -51,6 +51,13 @@ window.onload = function init() {
     ortRadio1 = document.getElementById("ortRadio1");
     ortRadio2 = document.getElementById("ortRadio2");
     ortRadio3 = document.getElementById("ortRadio3");
+    axoRadio1 = document.getElementById("axoRadio1");
+    axoRadio2 = document.getElementById("axoRadio2");
+    axoRadio3 = document.getElementById("axoRadio3");
+    axoRadio3 = document.getElementById("axoRadio4");
+    oblRadio1 = document.getElementById("oblRadio1");
+    oblRadio2 = document.getElementById("oblRadio2");
+    oblRadio3 = document.getElementById("oblRadio3");
     addEventListener("keypress", keyPressed);
 
 
@@ -71,6 +78,14 @@ window.onload = function init() {
     ortRadio1.addEventListener("click", radioClicked);
     ortRadio2.addEventListener("click", radioClicked);
     ortRadio3.addEventListener("click", radioClicked);
+    axoRadio1.addEventListener("click", radioClicked);
+    axoRadio2.addEventListener("click", radioClicked);
+    axoRadio3.addEventListener("click", radioClicked);
+    axoRadio4.addEventListener("click", radioClicked);
+    oblRadio1.addEventListener("click", radioClicked);
+    oblRadio2.addEventListener("click", radioClicked);
+    oblRadio3.addEventListener("click", radioClicked);
+
 
     gl = WebGLUtils.setupWebGL(canvas);
     if (!gl) { alert("WebGL isn't available"); }
@@ -137,7 +152,7 @@ function fillArrayPrimitives() {
 
 function radioClicked(evt) {
     switch (evt.target.value) {
-        //Ortogonal
+        //Ortogonal --- DONE
         case "principal":
             ortogonalViews(1);
             break;
@@ -148,28 +163,29 @@ function radioClicked(evt) {
             ortogonalViews(3);
             break;
         //Axonometric
-        case "isometry":
-            auxonometricViews(1);
+        case "isometric": // INCOMPLETE
+            axonometricViews(1);
             break;
-        case "dimetry":
-            auxonometricViews(2);
+        case "dimetric": // INCOMPLETE
+            axonometricViews(2);
             break;
-        case "trimetry":
-            auxonometricViews(3);
+        case "trimetric": // TODO
+            axonometricViews(3);
             break;
-        case "freeA":
-            auxonometricViews(4);
+        case "freeA": // TODO
+            axonometricViews(4);
             break;
         //Oblique:
-        case "chavalier":
+        case "cavalier":
             obliqueViews(1);
             break;
         case "cabinet":
             obliqueViews(2);
             break;
-        case "freeO":
+        case "freeO": // TODO
             obliqueViews(3);
             break;
+        //Perspective:
         case "perspective":
             perspectiveView();
             break;
@@ -179,16 +195,16 @@ function radioClicked(evt) {
 
 //Ortogonal:
 function ortogonalViews(ortoNumb) {
-    var auxView = mat4();
+    var eye = [0, 0, 0];
+    var auxView;
     if (ortoNumb == 1) { // Principal
-        auxView = mViewInit;
-        auxView[2][2]=0;
+        auxView = lookAt(eye, at, up);
     }
     else if (ortoNumb == 2) { //RightSide
-        auxView = mult(mViewInit,rotateY(90));
+        auxView = mult(rotateY(-90), lookAt(eye, at, up));
     }
     else {//Plant
-        auxView = mult(rotateX(90),mViewInit);
+        auxView = mult(rotateX(90), lookAt(eye, at, up));
     }
 
     mView = auxView;
@@ -196,16 +212,14 @@ function ortogonalViews(ortoNumb) {
 
 //Axonometric:
 function axonometricViews(axoNumb) {
-    var auxView = mat4();
+    var eye = [0, 0, 0];
+    var auxView;
 
     if (axoNumb == 1) {//Isometry
-        auxView = mult(auxView, rotateX(30));
-        auxView = mult(auxView, rotateY(30));
-
+        auxView = mult(lookAt(eye, at, up), mult(rotateX(30), rotateY(30)));
     }
     else if (axoNumb == 2) {//Dimetry
-        auxView = mult(auxView, rotateX(42));
-        auxView = mult(auxView, rotateY(7));
+        auxView = mult(lookAt(eye, at, up), mult(rotateX(7), rotateY(42)));
     }
     else if (axoNumb == 3) {//Trimetry
         auxView = mult(auxView, rotateX(54));
@@ -221,26 +235,26 @@ function axonometricViews(axoNumb) {
 
 //Oblique:
 function obliqueViews(oblNumb) {
-    var auxView = mat4();
-
-    var Mobl = mat4(
-        1.0, 0.0, -l * Math.cos(alpha), 0.0,
-        0.0, 1.0, -l * Math.sin(alpha), 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0
-    );
+    var auxView;
 
     if (oblNumb == 1) { //Chavalier
-
+        auxView = mObl(1, 45);
     }
     else if (oblNumb == 2) { //Cabinet
-
+        auxView = mObl(0.5, 45);
     }
     else { //FreeO
         auxView = mult(auxView, Mobl);
     }
 
     mView = auxView;
+}
+
+function mObl(l, alpha) {
+    return mat4(1.0, 0.0, -l * Math.cos(alpha), 0.0,
+                0.0, 1.0, -l * Math.sin(alpha), 0.0,
+                0.0, 0.0, 1.0, 0.0,
+                0.0, 0.0, 0.0, 1.0);
 }
 
 function perspectiveView() {
