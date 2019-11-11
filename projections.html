@@ -1,51 +1,69 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<style>
-/* Style the tab */
-.tab {
-  overflow: hidden;
-  border: 1px solid #ccc;
-  background-color: lightskyblue;
-}
+  <style>
+    /* Style the tab */
+    .tab {
+      overflow: hidden;
+      border: 1px solid #ccc;
+      background-color: lightskyblue;
+    }
 
-/* Style the buttons that are used to open the tab content */
-.tab button {
-  background-color: inherit;
-  float: left;
-  border: none;
-  outline: none;
-  cursor: pointer;
-  padding: 14px 16px;
-  transition: 0.3s;
-}
+    /* Style the buttons that are used to open the tab content */
+    .tab button {
+      background-color: inherit;
+      float: left;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      transition: 0.3s;
+    }
 
-/* Change background color of buttons on hover */
-.tab button:hover {
-  background-color: #ddd;
-}
+    /* Change background color of buttons on hover */
+    .tab button:hover {
+      background-color: #ddd;
+    }
 
-/* Create an active/current tablink class */
-.tab button.active {
-  background-color: lightsteelblue;
-}
+    /* Create an active/current tablink class */
+    .tab button.active {
+      background-color: lightsteelblue;
+    }
 
-/* Style the tab content */
-.tabops {
-  display: none;
-  padding: 6px 12px;
-  border: 1px solid #ccc;
-  background-color: rgb(189, 228, 253);
-  border-top: none;
-  animation: fadeEffect 1s; /* Fading effect takes 1 second */
-}
-/* Go from zero to full opacity */
-@keyframes fadeEffect {
-  from {opacity: 0;}
-  to {opacity: 1;}
-}
-</style>
-<script id="vertex-shader" type="x-shader/x-vertex">
+    /* Style the tab content */
+    .tabops {
+      display: none;
+      padding: 6px 12px;
+      border: 1px solid #ccc;
+      background-color: rgb(189, 228, 253);
+      border-top: none;
+      animation: fadeEffect 1s;
+      /* Fading effect takes 1 second */
+    }
+
+    .gamma {
+      display: none;
+      animation: fadeEffect 1s;
+    }
+
+    .alpha {
+      display: none;
+      animation: fadeEffect 1s;
+    }
+
+    /* Go from zero to full opacity */
+    @keyframes fadeEffect {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+  </style>
+  <script id="vertex-shader" type="x-shader/x-vertex">
 attribute vec4 vPosition; // inputs
 attribute vec4 vNormal;
 varying vec4 fColor; // output do vertex shader
@@ -57,7 +75,7 @@ void main(){
     fColor = vNormal;
 }
 </script>
-<script id="fragment-shader" type="x-shader/x-fragment">
+  <script id="fragment-shader" type="x-shader/x-fragment">
 precision mediump float;
 varying vec4 fColor; // input do fragment shader
 void main() {
@@ -67,59 +85,91 @@ void main() {
     gl_FragColor = fColor;
 }
 </script>
-<script type="text/javascript" src="../Common/webgl-utils.js"></script>
-<script type="text/javascript" src="../Common/initShaders.js"></script>
-<script type="text/javascript" src="../Common/MV.js"></script>
-<script type="text/javascript" src="../Common/cube.js"></script>
-<script type="text/javascript" src="../Common/sphere.js"></script>
-<script type="text/javascript" src="../Common/cylinder.js"></script>
-<script type="text/javascript" src="../Common/torus.js"></script>
-<script type="text/javascript" src="../Common/bunny-data.js"></script>
-<script type="text/javascript" src="../Common/bunny.js"></script>
-<script type="text/javascript" src="projections.js"></script>
+  <script type="text/javascript" src="../Common/webgl-utils.js"></script>
+  <script type="text/javascript" src="../Common/initShaders.js"></script>
+  <script type="text/javascript" src="../Common/MV.js"></script>
+  <script type="text/javascript" src="../Common/cube.js"></script>
+  <script type="text/javascript" src="../Common/sphere.js"></script>
+  <script type="text/javascript" src="../Common/cylinder.js"></script>
+  <script type="text/javascript" src="../Common/torus.js"></script>
+  <script type="text/javascript" src="../Common/bunny-data.js"></script>
+  <script type="text/javascript" src="../Common/bunny.js"></script>
+  <script type="text/javascript" src="superQuad.js"></script>
+  <script type="text/javascript" src="projections.js"></script>
 </head>
-<body>
-    <title>Projections</title>
-    <canvas id="gl-canvas">
-        Oops... your browser doesn't support the HTML5 canvas element"
-    </canvas>
-    <div class="tab">
-        <button id="bt1" class="tablinks" onclick="showTab(event,'Ortogonal')">Ortogonal</button>
-        <button id="bt2" class="tablinks" onclick="showTab(event,'Axonometric')">Axonometric</button>
-        <button id="bt3" class="tablinks" onclick="showTab(event,'Oblique')">Oblique</button>
-        <button id="bt4" class="tablinks" onclick="showTab(event,'Perspective')">Perspective</button>
-    </div>
-      
-    <!-- Tab content -->
-    <div id="Ortogonal" class="tabops">
-        <input type="radio" id="ortRadio1" name="ortotype" value="principal">Principal<br>
-        <input type="radio" id="ortRadio2" name="ortotype" value="plant">Plant<br>
-        <input type="radio" id="ortRadio3" name="ortotype" value="rightside">Right Side<br>
-    </div>
-      
-    <div id="Axonometric" class="tabops">
-        <input type="radio" id="axoRadio1" name="axotype" value="isometry">Isometry<br>
-        <input type="radio" id="axoRadio2" name="axotype" value="dimetry">Dimetry<br>
-        <input type="radio" id="axoRadio3" name="axotype" value="trimetry">Trimetry<br>
-        <input type="radio" id="axoRadio4" name="axotype" value="free">Free<br>
-    </div>
-      
-    <div id="Oblique" class="tabops">
-        <input type="radio" id="oblRadio1" name="obltype" value="chavelier">Chavelier<br>
-        <input type="radio" id="oblRadio2" name="obltype" value="cabinet">Cabinet<br>
-        <input type="radio" id="oblRadio3" name="obltype" value="free">Free<br>
-    </div>
-    
-    <div id="Perspective" class="tabops">
-    </div>
 
-    <p>Use A or D to navigate through primitives.</p>
-    <p>Z- enable Z-buffer</p>
-    <p>B- enable Backface Culling</p>
-    <p>tx:<input type="range" min="-1" max="1" value="0" step="0.1" id="txSlide">ty:<input type="range" min="-1" max="1" value="0" step="0.1" id="tySlide">tz:<input type="range" min="-1" max="1" value="0" step="0.1" id="tzSlide"></p>
-    <p>sx:<input type="range" min="0.05" max="2" value="1" step="0.05" id="sxSlide">sy:<input type="range" min="0.05" max="2" value="1" step="0.05" id="sySlide">sz:<input type="range" min="0.05" max="2" value="1" step="0.05" id="szSlide"></p>
-    <p>rx:<input type="range" min="-180" max="180" value="0" step="0.01" id="rxSlide">ry:<input type="range" min="-180" max="180" value="0" step="0.01" id="rySlide">rz:<input type="range" min="-180" max="180" value="0" step="0.01" id="rzSlide"></p>
-    <p><input type="button" id="submit" value="submit changes"><input type="button" id="reset" value="reset"></p>
-    <p><input type="button" id="removeAll" value="remove all instances"></p>
+<body>
+  <title>Projections</title>
+  <canvas id="gl-canvas">
+    Oops... your browser doesn't support the HTML5 canvas element"
+  </canvas>
+  <div class="tab">
+    <button id="bt1" class="tablinks" onclick="showTab(event,'Ortogonal')">Ortogonal</button>
+    <button id="bt2" class="tablinks" onclick="showTab(event,'Axonometric')">Axonometric</button>
+    <button id="bt3" class="tablinks" onclick="showTab(event,'Oblique')">Oblique</button>
+    <button id="bt4" class="tablinks" onclick="showTab(event,'Perspective')">Perspective</button>
+  </div>
+
+  <div id="Ortogonal" class="tabops">
+    <input type="radio" id="ortRadio1" name="ortotype" value="principal">Principal<br>
+    <input type="radio" id="ortRadio2" name="ortotype" value="plant">Plant<br>
+    <input type="radio" id="ortRadio3" name="ortotype" value="rightside">Right Side<br>
+  </div>
+
+  <div id="Axonometric" class="tabops">
+    <input type="radio" id="axoRadio1" name="axotype" value="isometric">Isometry<br>
+    <input type="radio" id="axoRadio2" name="axotype" value="dimetric">Dimetry<br>
+    <input type="radio" id="axoRadio3" name="axotype" value="trimetric">Trimetry<br>
+    <input type="radio" id="axoRadio4" name="axotype" value="freeA">Free
+    <p class="gamma" id="gammaContainer">
+      <datalist id="0mark">
+        <option value="0">
+      </datalist>
+      <span style="display: table-cell; vertical-align: middle; font-size: 25px; padding-left: 30px;">&gamma;</span>
+      <input type="range" min="-180" max="180" value="0" step="0.01" id="gammaSlider" list="0mark"
+        style="vertical-align: middle;">
+    </p>
+    <p class="gamma" id="thetaContainer">
+      <span style="display: table-cell; vertical-align: middle; font-size: 25px; padding-left: 30px;">&theta;</span>
+      <input type="range" min="-180" max="180" value="0" step="0.01" id="thetaSlider" list="0mark"
+        style="vertical-align: middle;">
+    </p>
+  </div>
+
+  <div id="Oblique" class="tabops">
+    <input type="radio" id="oblRadio1" name="obltype" value="cavalier">Cavalier<br>
+    <input type="radio" id="oblRadio2" name="obltype" value="cabinet">Cabinet<br>
+    <input type="radio" id="oblRadio3" name="obltype" value="freeO">Free<br>
+    <p class="alpha" id="lContainer">
+      <datalist id="lMark">
+        <option value="0.5">
+      </datalist>
+      <datalist id="alphaMark">
+        <option value="45">
+      </datalist>
+      <span style="display: table-cell; vertical-align: middle; font-size: 25px; padding-left: 30px;">l</span>
+      <input type="range" min="0" max="1" value="0.5" step="0.01" id="lSlider" list="lMark"
+        style="vertical-align: middle;">
+    </p>
+    <p class="alpha" id="alphaContainer">
+      <span style="display: table-cell; vertical-align: middle; font-size: 25px; padding-left: 30px;">&alpha;</span>
+      <input type="range" min="0" max="90" value="45" step="0.01" id="alphaSlider" list="alphaMark"
+        style="vertical-align: middle;">
+    </p>
+  </div>
+
+  <div id="Perspective" class="tabops">
+      <br>d value: <input type="range" min="-2" max="2" value="1.5" step="0.05" id="dSlider" list="d"
+        style="vertical-align: middle;">
+      <p class="dPersp" id="dPrespContainer">
+      </p>
+  </div>
+
+  <p>Navigate through object primitives: press <b>A or D</b></p>
+  <p>WireFrame mode: press <b>W</b></p>
+  <p>Filled mode: press <b>F</b></p>
+  <p>Enable/Disable Z-Buffer: press <b>Z</b></p>
+  <p>Enable/Disable Back-Face Culling: press <b>B</b></p>
 </body>
+
 </html>
