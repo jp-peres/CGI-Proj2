@@ -4,6 +4,8 @@ var gl;
 var instances = [];
 var nInstances = 0;
 
+// SuperQuadric Slider vars
+var e1, e2;
 // Slider vars
 var gammaSlider, thetaSlider, lSlider, alphaSlider, dSlider;
 // Radio button vars
@@ -77,6 +79,8 @@ function initialProgramState() {
 }
 
 function generateEventListeners() {
+    e1 = document.getElementById("e1");
+    e2 = document.getElementById("e2");
     ortRadio1 = document.getElementById("ortRadio1");
     ortRadio2 = document.getElementById("ortRadio2");
     ortRadio3 = document.getElementById("ortRadio3");
@@ -98,6 +102,8 @@ function generateEventListeners() {
     alphaSlider = document.getElementById("alphaSlider");
     dSlider = document.getElementById("dSlider");
     addEventListener("keypress", keyPressed);
+    e1.addEventListener("input", initializeObjects);
+    e2.addEventListener("input", initializeObjects);
     thetaSlider.addEventListener("input", gammaThetaChanged);
     gammaSlider.addEventListener("input", gammaThetaChanged);
     alphaSlider.addEventListener("input", alphaLChanged);
@@ -134,12 +140,15 @@ function generateViewPort() {
 }
 
 function initializeObjects() {
+    var currentE1 = Number(e1.value);
+    var currentE2 = Number(e2.value);
+    
     cubeInit(gl);
     sphereInit(gl);
     bunnyInit(gl);
     torusInit(gl);
     cylinderInit(gl);
-    //superQuadInit(gl);
+    //superQuadInit(gl,currentE1,currentE2);
 }
 
 function fillArrayPrimitives() {
@@ -301,8 +310,8 @@ function alphaLChanged() {
 function mObl(l, alpha) {
     var auxView = mat4();
     
-    auxView[0][2] = -l * Math.cos(alpha * Math.PI / 180);
-    auxView[1][2] = -l * Math.cos(alpha * Math.PI / 180);
+    auxView[0][2] = -l * Math.cos(degrees(alpha));
+    auxView[1][2] = -l * Math.sin(degrees(alpha));
     
     return auxView;
 }
