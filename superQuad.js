@@ -36,7 +36,7 @@ function supQuadExpress(r,phi,theta,e1,e2){
     if(Math.sin(phi) <0){
         expYe1 *= -1;
     }
-    if(Math.sin(theta)){
+    if(Math.sin(theta) <0){
         expZe2 *= -1;
     }
     var x = r*expXe1*expXe2;
