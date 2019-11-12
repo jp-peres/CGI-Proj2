@@ -94,6 +94,7 @@ void main() {
   <script type="text/javascript" src="../Common/torus.js"></script>
   <script type="text/javascript" src="../Common/bunny-data.js"></script>
   <script type="text/javascript" src="../Common/bunny.js"></script>
+  <script type="text/javascript" src="superQuad.js"></script>
   <script type="text/javascript" src="projections.js"></script>
 </head>
 
@@ -106,7 +107,7 @@ void main() {
     <button id="bt1" class="tablinks" onclick="showTab(event,'Ortogonal')">Ortogonal</button>
     <button id="bt2" class="tablinks" onclick="showTab(event,'Axonometric')">Axonometric</button>
     <button id="bt3" class="tablinks" onclick="showTab(event,'Oblique')">Oblique</button>
-    <button id="bt4" class="tablinks" onclick="showTab(event,'Perspective')">Perspective</button>
+    <button id="bt4" class="tablinks" value="perspective" onclick="showTab(event,'Perspective'); radioClicked(event);">Perspective</button>
   </div>
 
   <div id="Ortogonal" class="tabops">
@@ -144,7 +145,7 @@ void main() {
         <option value="0.5">
       </datalist>
       <datalist id="alphaMark">
-        <option value="45">
+        <option value="0">
       </datalist>
       <span style="display: table-cell; vertical-align: middle; font-size: 25px; padding-left: 30px;">l</span>
       <input type="range" min="0" max="1" value="0.5" step="0.01" id="lSlider" list="lMark"
@@ -152,12 +153,17 @@ void main() {
     </p>
     <p class="alpha" id="alphaContainer">
       <span style="display: table-cell; vertical-align: middle; font-size: 25px; padding-left: 30px;">&alpha;</span>
-      <input type="range" min="0" max="90" value="45" step="0.01" id="alphaSlider" list="alphaMark"
+      <input type="range" min="-180" max="180" value="0" step="0.01" id="alphaSlider" list="alphaMark"
         style="vertical-align: middle;">
     </p>
   </div>
 
   <div id="Perspective" class="tabops">
+    <datalist id="d">
+          <option value="1.5">
+    </datalist>
+    d value: <input type="range" min="1" max="5" value="1.5" step="0.01" id="dSlider" list="d"
+      style="vertical-align: middle;">
   </div>
 
   <p>Navigate through object primitives: press <b>A or D</b></p>

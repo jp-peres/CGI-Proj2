@@ -4,10 +4,12 @@ var gl;
 var instances = [];
 var nInstances = 0;
 
+var zoomStack = [];
+
 // Slider vars
-var gammaSlider, thetaSlider, lSlider, alphaSlider;
+var gammaSlider, thetaSlider, lSlider, alphaSlider, dSlider;
 // Radio button vars
-var ortRadio1, ortRadio2, ortRadio3, axoRadio1, axoRadio2, axoRadio3, axoRadio4, oblRadio1, oblRadio2, oblRadio3;
+var ortRadio1, ortRadio2, ortRadio3, axoRadio1, axoRadio2, axoRadio3, axoRadio4, oblRadio1, oblRadio2, oblRadio3, perspective;
 // Container paragraphs (to hide sliders)
 var gammaContainer, thetaContainer, lContainer, alphaContainer;
 // Current selected primitive
@@ -19,6 +21,7 @@ var zBufferEnabled, faceCullingEnabled;
 
 // mView var
 var mView;
+var mViewFIXED = mat4();
 // mProjection var
 var mProjection;
 // Array with all the draw primitives wired and filled (cube, sphere, bunny, etc)
@@ -31,7 +34,9 @@ var nrOfPrimitives = 5;
 var wiredOn;
 var canvas;
 var program;
-var currentScale = 1;
+var scaleM = mat4();
+var countScale = 0;
+
 
 window.onresize = function () {
     generateViewPort();
@@ -91,6 +96,7 @@ function generateEventListeners() {
     gammaSlider = document.getElementById("gammaSlider");
     thetaSlider = document.getElementById("thetaSlider");
     lSlider = document.getElementById("lSlider");
+    dSlider = document.getElementById("dSlider");
     alphaSlider = document.getElementById("alphaSlider");
     addEventListener("keypress", keyPressed);
     thetaSlider.addEventListener("input", gammaThetaChanged);
@@ -107,7 +113,8 @@ function generateEventListeners() {
     oblRadio1.addEventListener("click", radioClicked);
     oblRadio2.addEventListener("click", radioClicked);
     oblRadio3.addEventListener("click", radioClicked);
-    canvas.addEventListener("wheel",mouseWheel);
+    dSlider.addEventListener("input", dChanged);
+    canvas.addEventListener("wheel", mouseWheel);
 }
 
 function generateViewPort() {
@@ -187,9 +194,8 @@ function ortogonalViews(op) {
             auxView[1][2] = -1;
             break;
     }
-    mView = auxView;
-    // readjusting with current zoom Not working
-    //mView = mult(mView,scalem(currentScale,currentScale,currentScale));
+    mViewFIXED = auxView;
+    zoomPerspective();
 }
 
 //Axonometric:
@@ -216,8 +222,7 @@ function axonometricViews(op) {
             gammaThetaChanged();
             break;
     }
-    // readjusting with current zoom Not working
-    //mView = mult(mView,scalem(currentScale,currentScale,currentScale));
+    zoomPerspective();
 }
 
 
@@ -227,6 +232,8 @@ function axonometricViews(op) {
 function degrees(radianVal) {
     return radianVal * 180 / Math.PI;
 }
+
+
 
 function getTheta(angleA, angleB) {
     var radianA = radians(angleA);
@@ -248,7 +255,7 @@ function setmViewAxonometric(angleA, angleB) {
     var auxView = mat4();
     var theta = getTheta(angleA, angleB);
     var gamma = getGamma(angleA, angleB);
-    mView = mult(auxView, mult(rotateX(gamma), rotateY(theta)));
+    mViewFIXED = mult(auxView, mult(rotateX(gamma), rotateY(theta)));
 }
 
 // EventListener for sliders
@@ -256,7 +263,8 @@ function gammaThetaChanged() {
     var auxView = mat4();
     var currGamma = Number(gammaSlider.value);
     var currTheta = Number(thetaSlider.value);
-    mView = mult(auxView, mult(rotateX(currGamma), rotateY(currTheta)));
+    mViewFIXED = mult(auxView, mult(rotateX(currGamma), rotateY(currTheta)));
+    zoomPerspective();
 }
 
 //Oblique:
@@ -267,10 +275,10 @@ function obliqueViews(op) {
     }
     switch (op) {
         case "cavalier":
-            mView = mObl(1, 45);
+            mViewFIXED = mObl(1, 45);
             break;
         case "cabinet":
-            mView = mObl(0.5, 45);
+            mViewFIXED = mObl(0.5, 45);
             break;
         case "freeO": // TODO: needs fix on alpha?
             alphaContainer.style.display = "table";
@@ -278,35 +286,36 @@ function obliqueViews(op) {
             alphaLChanged();
             break;
     }
-    // readjusting with current zoom Not working
-    //mView = mult(mView,scalem(currentScale,currentScale,currentScale));
+    zoomPerspective();
 }
 
 function alphaLChanged() {
     var currL = Number(lSlider.value);
     var currAlpha = Number(alphaSlider.value);
-    mView = mObl(currL, currAlpha);
+    mViewFIXED = mObl(currL, currAlpha);
+    zoomPerspective();
 }
 
 function mObl(l, alpha) {
-    return mat4(1.0, 0.0, -l * Math.cos(alpha), 0.0,
-        0.0, 1.0, -l * Math.sin(alpha), 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0);
+    var auxView = mat4();
+
+    auxView[0][2] = -l * Math.cos(radians(alpha));
+    auxView[1][2] = -l * Math.sin(radians(alpha));
+
+    return auxView;
 }
 
 function perspectiveView() {
+    var d = Number(dSlider.value);
     var auxView = mat4();
-
-    var Mper = mat4(
-        1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, -1 / d, 1.0
-    );
-
-    auxView = mult(auxView, Mper);
-    mView = auxView;
+    if (d == 1) {
+        auxView[3][2] = -1;
+    }
+    else {
+        auxView[3][2] = -1 / d;
+    }
+    mViewFIXED = auxView;
+    zoomPerspective();
 }
 
 function showTab(evt, op) {
@@ -330,23 +339,66 @@ function showTab(evt, op) {
     currentTabOps.style.display = "block";
     evt.currentTarget.className += " active";
     var isChecked = false;
-    for (i = 0; i < currentTabOps.children.length; i++) {
-        if (currentTabOps.children[i].checked) {
-            currentTabOps.children[i].click();
-            isChecked = true;
-            break;
+    if (currentTabOps.id != "Perspective") {
+        for (i = 0; i < currentTabOps.children.length; i++) {
+            if (currentTabOps.children[i].checked) {
+                currentTabOps.children[i].click();
+                isChecked = true;
+                break;
+            }
         }
-    }
-    if (!isChecked) {
-        currentTabOps.children[0].checked = true;
-        currentTabOps.children[0].click();
+        if (!isChecked) {
+            currentTabOps.children[0].checked = true;
+            currentTabOps.children[0].click();
+        }
     }
 }
 
 function mouseWheel(ev) {
-    currentScale = currentScale + (ev.deltaY / 12500);
-    mView = mult(mView, scalem(currentScale,currentScale,currentScale));
+    zoomIn(ev.deltaY);
 }
+
+function zoomIn(ev) {
+    var scaleStep = 0.01;
+    var scaleAux;
+    if (ev < 0){
+        countScale--;
+        if (countScale==0)
+            scaleAux = scaleStep;
+        else
+            scaleAux = scaleStep*countScale;
+        scaleM = scalem(1+scaleAux, 1+scaleAux, 1+scaleAux);
+    }
+    else{
+        countScale++;
+        if (countScale==0)
+            scaleAux = scaleStep;
+        else
+            scaleAux = scaleStep*countScale;
+        scaleM = scalem(1+scaleAux, 1+scaleAux, 1+scaleAux);
+    }
+    zoomPerspective();
+}
+
+function dChanged() {
+    perspectiveView();
+}
+
+function zoomPerspective() {
+    mView = mViewFIXED;
+    mView = mult(mView,scaleM);
+}
+
+function zoomStackUpdate(scaleMat,ev) {
+    console.log(scaleMat);
+    if (ev < 0){
+        scaleTransforms.push(scaleMat);
+    }
+    else{
+        scaleTransforms.push(scaleMat);
+    }
+}
+
 
 function keyPressed(ev) {
     switch (ev.key) {
@@ -375,12 +427,10 @@ function keyPressed(ev) {
             instances[nInstances - 1].p = wiredOn ? primitives[currentPrimitiveIndex].w : primitives[currentPrimitiveIndex].f;
             break;
         case "+":
-            near++;
-            mProjection = ortho(-2, 2, -2, 2, near, far);
+            zoomIn(0.01);
             break;
         case "-":
-            near--;
-            mProjection = ortho(-2, 2, -2, 2, near, far);
+            zoomIn(-0.01);
             break;
     }
 }
