@@ -50,6 +50,28 @@ function supQuadExpress(r,phi,theta,e1,e2){
     return auxPt;
 }
 
+function verifyPhiInterval(phi){
+    var auxPhi = phi;
+    if(!(phi>-(Math.PI/2))){
+        phi = -(Math.PI/2);
+    }
+    else if(!(phi<(Math.PI/2))){
+        phi = Math.PI/2;
+    }
+    return auxPhi;
+}
+
+function verifyThetaInterval(theta){
+    var auxTheta = theta;
+    if(!(theta<Math.PI)){
+        theta = Math.PI;
+    }
+    else if(!(theta>-Math.PI)){
+        theta = -Math.PI;
+    }
+    return auxTheta;
+}
+
 // Generate points using polar coordinates
 function superQuadBuild(e1, e2) 
 {
@@ -68,6 +90,9 @@ function superQuadBuild(e1, e2)
     // Generate middle
     for(var i=0, phi=Math.PI/2-d_phi; i<SUPERQUAD_LATS; i++, phi-=d_phi) {
         for(var j=0, theta=0; j<SUPERQUAD_LONGS; j++, theta+=d_theta) {
+            
+            phi = verifyPhiInterval(phi);
+            theta = verifyThetaInterval(theta);
             var pt = supQuadExpress(r,phi,theta,e1,e2);
             superQuad_points.push(pt);
             var n = vec3(pt);
