@@ -4,8 +4,6 @@ var gl;
 var instances = [];
 var nInstances = 0;
 
-var zoomStack = [];
-
 // Slider vars
 var gammaSlider, thetaSlider, lSlider, alphaSlider, dSlider,  e1Slider, e2Slider;
 // Radio button vars
@@ -20,8 +18,7 @@ var uProj, uModel, uView;
 var zBufferEnabled, faceCullingEnabled;
 
 // mView var
-var mView;
-var mViewFIXED = mat4();
+var mView = mat4();
 // mProjection var
 var mProjection;
 // Array with all the draw primitives wired and filled (cube, sphere, bunny, etc)
@@ -34,8 +31,7 @@ var nrOfPrimitives = 6;
 var wiredOn;
 var canvas;
 var program;
-var scaleM = mat4();
-var countScale = 0;
+var countScale = 1;
 
 
 window.onresize = function () {
@@ -128,18 +124,19 @@ function generateEventListeners() {
 function generateViewPort() {
     var height = window.innerHeight;
     var width = window.innerWidth;
+    var zoomFactor = 1*countScale; 
     var s = Math.min(width, height / 2);
-    var aRatio = width / height;
+    var aRatio = width / (height*zoomFactor);
     if (s == width) {
-        mProjection = ortho(-2, 2, -1 * aRatio, 1 * aRatio, -10, 10);
+        mProjection = ortho(-2/zoomFactor, 2/zoomFactor, -1 * aRatio, 1 * aRatio, -10, 10);
     }
     else {
-        mProjection = ortho(-2 * aRatio, 2 * aRatio, -1, 1, -10, 10);
+        mProjection = ortho(-2 * aRatio, 2 * aRatio, -1/zoomFactor, 1/zoomFactor, -10, 10);
     }
     canvas.width = document.body.clientWidth;
     wrap.style.width = document.body.clientWidth;
-    canvas.height = height / 2;
-    gl.viewport(0, 0, width, height / 2);
+    canvas.height = height;
+    gl.viewport(0, 0, canvas.width , height / 2);
 }
 
 function initializeObjects() {
@@ -153,7 +150,6 @@ function initializeObjects() {
 
 function updateQuadric(){
     superInit(gl,e1Slider.value,e2Slider.value);
-    primitives[nrOfPrimitives-1] = {w: superWireFrame, f: superFilled};
 }
 
 function fillArrayPrimitives() {
@@ -202,15 +198,13 @@ function ortogonalViews(op) {
         case "principal":
             break;
         case "rightside":
-            auxView[0][0] = 0;
-            auxView[0][2] = -1;
+            auxView = mult(auxView,rotateY(-90));
             break;
         case "plant":
-            auxView[1][1] = 0;
-            auxView[1][2] = -1;
+            auxView = mult(auxView,rotateX(90));
             break;
     }
-    mViewFIXED = auxView;
+    mView = auxView;
     zoomPerspective();
 }
 
@@ -271,7 +265,7 @@ function setmViewAxonometric(angleA, angleB) {
     var auxView = mat4();
     var theta = getTheta(angleA, angleB);
     var gamma = getGamma(angleA, angleB);
-    mViewFIXED = mult(auxView, mult(rotateX(gamma), rotateY(theta)));
+    mView = mult(auxView, mult(rotateX(gamma), rotateY(theta)));
 }
 
 // EventListener for sliders
@@ -279,7 +273,7 @@ function gammaThetaChanged() {
     var auxView = mat4();
     var currGamma = Number(gammaSlider.value);
     var currTheta = Number(thetaSlider.value);
-    mViewFIXED = mult(auxView, mult(rotateX(currGamma), rotateY(currTheta)));
+    mView = mult(auxView, mult(rotateX(currGamma), rotateY(currTheta)));
     zoomPerspective();
 }
 
@@ -291,12 +285,12 @@ function obliqueViews(op) {
     }
     switch (op) {
         case "cavalier":
-            mViewFIXED = mObl(1, 45);
+            mView = mObl(1, 45);
             break;
         case "cabinet":
-            mViewFIXED = mObl(0.5, 45);
+            mView = mObl(0.5, 45);
             break;
-        case "freeO": // TODO: needs fix on alpha?
+        case "freeO":
             alphaContainer.style.display = "table";
             lContainer.style.display = "table";
             alphaLChanged();
@@ -308,7 +302,7 @@ function obliqueViews(op) {
 function alphaLChanged() {
     var currL = Number(lSlider.value);
     var currAlpha = Number(alphaSlider.value);
-    mViewFIXED = mObl(currL, currAlpha);
+    mView = mObl(currL, currAlpha);
     zoomPerspective();
 }
 
@@ -330,7 +324,7 @@ function perspectiveView() {
     else {
         auxView[3][2] = -1 / d;
     }
-    mViewFIXED = auxView;
+    mView = auxView;
     zoomPerspective();
 }
 
@@ -375,23 +369,12 @@ function mouseWheel(ev) {
 }
 
 function zoomIn(ev) {
-    var scaleStep = 0.15;
-    var scaleAux;
-    if (ev < 0) {
-        countScale--;
-        if (countScale == 0)
-            scaleAux = scaleStep;
-        else
-            scaleAux = scaleStep * countScale;
-        scaleM = scalem(1 + scaleAux, 1 + scaleAux, 1 + scaleAux);
+    var scaleStep = 0.1;
+    if (ev < 0 && countScale-scaleStep > 0.1) {
+        countScale -= scaleStep;
     }
-    else {
-        countScale++;
-        if (countScale == 0)
-            scaleAux = scaleStep;
-        else
-            scaleAux = scaleStep * countScale;
-        scaleM = scalem(1 + scaleAux, 1 + scaleAux, 1 + scaleAux);
+    else if (ev>0) {
+        countScale += scaleStep;
     }
     zoomPerspective();
 }
@@ -401,20 +384,8 @@ function dChanged() {
 }
 
 function zoomPerspective() {
-    mView = mViewFIXED;
-    mView = mult(mView, scaleM);
+    generateViewPort();
 }
-
-function zoomStackUpdate(scaleMat, ev) {
-    console.log(scaleMat);
-    if (ev < 0) {
-        scaleTransforms.push(scaleMat);
-    }
-    else {
-        scaleTransforms.push(scaleMat);
-    }
-}
-
 
 function keyPressed(ev) {
     switch (ev.key) {
