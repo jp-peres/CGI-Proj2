@@ -7,11 +7,11 @@ var nInstances = 0;
 var zoomStack = [];
 
 // Slider vars
-var gammaSlider, thetaSlider, lSlider, alphaSlider, dSlider;
+var gammaSlider, thetaSlider, lSlider, alphaSlider, dSlider,  e1Slider, e2Slider;
 // Radio button vars
 var ortRadio1, ortRadio2, ortRadio3, axoRadio1, axoRadio2, axoRadio3, axoRadio4, oblRadio1, oblRadio2, oblRadio3, perspective;
 // Container paragraphs (to hide sliders)
-var gammaContainer, thetaContainer, lContainer, alphaContainer;
+var gammaContainer, thetaContainer, lContainer, alphaContainer, superOps, wrap;
 // Current selected primitive
 var currentSelectedPrimitive;
 // Uniform location vars
@@ -29,7 +29,7 @@ var primitives = [];
 // Index of the selected primitive at the moment
 var currentPrimitiveIndex = 0;
 // Total number of object primitives
-var nrOfPrimitives = 5;
+var nrOfPrimitives = 6;
 // Wireframe on = true or Filled = false
 var wiredOn;
 var canvas;
@@ -53,7 +53,7 @@ window.onload = function init() {
     generateViewPort();
     initialProgramState();
 
-    gl.clearColor(0.39, 0.39, 0.39, 1.0);
+    gl.clearColor(0.38, 0.38, 0.38, 1.0);
     // Load shaders and initialize attribute buffers
     program = initShaders(gl, "vertex-shader", "fragment-shader");
     gl.useProgram(program);
@@ -89,15 +89,18 @@ function generateEventListeners() {
     oblRadio1 = document.getElementById("oblRadio1");
     oblRadio2 = document.getElementById("oblRadio2");
     oblRadio3 = document.getElementById("oblRadio3");
+    projTab = document.getElementById("projTab");
     gammaContainer = document.getElementById("gammaContainer");
     thetaContainer = document.getElementById("thetaContainer");
     alphaContainer = document.getElementById("alphaContainer");
     lContainer = document.getElementById("lContainer");
     gammaSlider = document.getElementById("gammaSlider");
     thetaSlider = document.getElementById("thetaSlider");
+    wrap = document.getElementById("wrap");
     lSlider = document.getElementById("lSlider");
     dSlider = document.getElementById("dSlider");
     alphaSlider = document.getElementById("alphaSlider");
+    superOps = document.getElementById("superOps");
     addEventListener("keypress", keyPressed);
     thetaSlider.addEventListener("input", gammaThetaChanged);
     gammaSlider.addEventListener("input", gammaThetaChanged);
@@ -115,6 +118,11 @@ function generateEventListeners() {
     oblRadio3.addEventListener("click", radioClicked);
     dSlider.addEventListener("input", dChanged);
     canvas.addEventListener("wheel", mouseWheel);
+    superOps.style.display = "none";
+    e1Slider = document.getElementById("e1Slider");
+    e1Slider.addEventListener("input",updateQuadric);
+    e2Slider = document.getElementById("e2Slider");
+    e2Slider.addEventListener("input",updateQuadric);
 }
 
 function generateViewPort() {
@@ -128,7 +136,8 @@ function generateViewPort() {
     else {
         mProjection = ortho(-2 * aRatio, 2 * aRatio, -1, 1, -10, 10);
     }
-    canvas.width = width;
+    canvas.width = document.body.clientWidth;
+    wrap.style.width = document.body.clientWidth;
     canvas.height = height / 2;
     gl.viewport(0, 0, width, height / 2);
 }
@@ -139,6 +148,12 @@ function initializeObjects() {
     bunnyInit(gl);
     torusInit(gl);
     cylinderInit(gl);
+    superInit(gl,e1Slider.value,e2Slider.value);
+}
+
+function updateQuadric(){
+    superInit(gl,e1Slider.value,e2Slider.value);
+    primitives[nrOfPrimitives-1] = {w: superWireFrame, f: superFilled};
 }
 
 function fillArrayPrimitives() {
@@ -147,6 +162,7 @@ function fillArrayPrimitives() {
     primitives.push({ w: cylinderDrawWireFrame, f: cylinderDrawFilled });
     primitives.push({ w: torusDrawWireFrame, f: torusDrawFilled });
     primitives.push({ w: bunnyDrawWireFrame, f: bunnyDrawFilled });
+    primitives.push({ w: superWireFrame, f: superFilled })
 }
 
 function radioClicked(evt) {
@@ -359,23 +375,23 @@ function mouseWheel(ev) {
 }
 
 function zoomIn(ev) {
-    var scaleStep = 0.01;
+    var scaleStep = 0.15;
     var scaleAux;
-    if (ev < 0){
+    if (ev < 0) {
         countScale--;
-        if (countScale==0)
+        if (countScale == 0)
             scaleAux = scaleStep;
         else
-            scaleAux = scaleStep*countScale;
-        scaleM = scalem(1+scaleAux, 1+scaleAux, 1+scaleAux);
+            scaleAux = scaleStep * countScale;
+        scaleM = scalem(1 + scaleAux, 1 + scaleAux, 1 + scaleAux);
     }
-    else{
+    else {
         countScale++;
-        if (countScale==0)
+        if (countScale == 0)
             scaleAux = scaleStep;
         else
-            scaleAux = scaleStep*countScale;
-        scaleM = scalem(1+scaleAux, 1+scaleAux, 1+scaleAux);
+            scaleAux = scaleStep * countScale;
+        scaleM = scalem(1 + scaleAux, 1 + scaleAux, 1 + scaleAux);
     }
     zoomPerspective();
 }
@@ -386,15 +402,15 @@ function dChanged() {
 
 function zoomPerspective() {
     mView = mViewFIXED;
-    mView = mult(mView,scaleM);
+    mView = mult(mView, scaleM);
 }
 
-function zoomStackUpdate(scaleMat,ev) {
+function zoomStackUpdate(scaleMat, ev) {
     console.log(scaleMat);
-    if (ev < 0){
+    if (ev < 0) {
         scaleTransforms.push(scaleMat);
     }
-    else{
+    else {
         scaleTransforms.push(scaleMat);
     }
 }
@@ -421,10 +437,18 @@ function keyPressed(ev) {
         case "a":
             currentPrimitiveIndex = currentPrimitiveIndex - 1 < 0 ? nrOfPrimitives - 1 : currentPrimitiveIndex - 1;
             instances[nInstances - 1].p = wiredOn ? primitives[currentPrimitiveIndex].w : primitives[currentPrimitiveIndex].f;
+            if (currentPrimitiveIndex == nrOfPrimitives - 1)
+                superOps.style.display = "block";
+            else
+                superOps.style.display = "none";
             break;
         case "d":
             currentPrimitiveIndex = ((currentPrimitiveIndex + 1) % nrOfPrimitives);
             instances[nInstances - 1].p = wiredOn ? primitives[currentPrimitiveIndex].w : primitives[currentPrimitiveIndex].f;
+            if (currentPrimitiveIndex == nrOfPrimitives - 1)
+                superOps.style.display = "block";
+            else
+                superOps.style.display = "none";
             break;
         case "+":
             zoomIn(0.01);
@@ -437,7 +461,6 @@ function keyPressed(ev) {
 
 function render() {
     gl.clear(gl.COLOR_BUFFER_BIT || gl.DEPTH_BUFFER_BIT);
-    //mProjection = perspective(10,canvas.width/canvas.height,1,100);
     gl.uniformMatrix4fv(uView, false, flatten(mView));
     gl.uniformMatrix4fv(uProj, false, flatten(mProjection));
     for (var i = 0; i < nInstances; i++) {
