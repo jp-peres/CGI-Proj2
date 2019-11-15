@@ -125,18 +125,17 @@ function generateViewPort() {
     var height = window.innerHeight;
     var width = window.innerWidth;
     var zoomFactor = 1*countScale; 
-    var s = Math.min(width, height / 2);
+    var s = Math.min(width, height);
     var aRatio = width / (height*zoomFactor);
     if (s == width) {
-        mProjection = ortho(-2/zoomFactor, 2/zoomFactor, -1 * aRatio, 1 * aRatio, -10, 10);
+        mProjection = ortho(-2/zoomFactor, 2/zoomFactor, -2 * aRatio, 2 * aRatio, -10, 10);
     }
     else {
-        mProjection = ortho(-2 * aRatio, 2 * aRatio, -1/zoomFactor, 1/zoomFactor, -10, 10);
+        mProjection = ortho(-2 * aRatio, 2 * aRatio, -2/zoomFactor, 2/zoomFactor, -10, 10);
     }
     canvas.width = document.body.clientWidth;
-    wrap.style.width = document.body.clientWidth;
     canvas.height = height;
-    gl.viewport(0, 0, canvas.width , height / 2);
+    gl.viewport(0, 0, canvas.width , height);
 }
 
 function initializeObjects() {

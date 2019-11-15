@@ -3,23 +3,36 @@
 
 <head>
   <style>
-    .wrapper {
-      width: 100%;
-      padding: 10px 0;
-      position: relative;
-      background-color: rgb(96.9, 96.9, 96.9);
-      margin: auto;
+
+    .textBt{
+      font-size: 1.5vmax;
     }
 
-    .mainBox {
-      margin: auto;
-      max-width: 400px;
+    .wrapper {
+      width: 100%;
+      position: absolute;
+      background-color: transparent;
+      top:70vh;
+    }
+
+    .wrapper .mainBox {
+      margin:0 auto;
+      width: 50%;
+      min-width: 100px;
     }
     /* Style the tab */
-    .tab {
+    .wrapper .mainBox .tab {
+      width: 100%;
+      display:table;
+      table-layout: auto;
       overflow: hidden;
-      border: 1px solid #ccc;
       background-color: lightskyblue;
+    }
+    .wrapper .mainBox .tab > *{
+      display: table-cell;
+      width: 25%;
+      vertical-align: top;
+      text-align: center;
     }
 
     .dasda {}
@@ -35,7 +48,6 @@
       border: none;
       outline: none;
       cursor: pointer;
-      padding: 14px 16px;
       transition: 0.3s;
     }
 
@@ -54,10 +66,10 @@
     }
 
     /* Style the tab content */
-    .tabops {
+    .wrapper .mainBox .tabops {
+      width: 100%;
       display: none;
       padding: 10px 0;
-      border: 1px solid #ccc;
       background-color: rgb(189, 228, 253);
       border-top: none;
       animation: fadeEffect 1s;
@@ -68,9 +80,11 @@
       display: none;
       text-align: center;
       animation: fadeEffect 1s;
+      margin: 0 auto;
     }
 
     .alpha {
+      margin: 0 auto;
       display: none;
       text-align: center;
       animation: fadeEffect 1s;
@@ -79,7 +93,7 @@
     .superOps {
       display: none;
       border: 1px solid #ccc;
-      max-width: 398px;
+      width: 100%;
       text-align: center;
       margin: auto;
       background-color: rgb(189, 228, 253);
@@ -138,40 +152,45 @@ void main() {
     <canvas id="gl-canvas">
       Oops... your browser doesn't support the HTML5 canvas element"
     </canvas>
-    <div class="wrapper" id="wrap">
+    <div class="wrapper">
       <div class="mainBox">
         <div class="tab" id="projTab">
-          <button id="bt1" class="tablinks" onclick="showTab(event,'Ortogonal')">Ortogonal</button>
-          <button id="bt2" class="tablinks" onclick="showTab(event,'Axonometric')">Axonometric</button>
-          <button id="bt3" class="tablinks" onclick="showTab(event,'Oblique')">Oblique</button>
+          <button id="bt1" class="tablinks" onclick="showTab(event,'Ortogonal')"><span class="textBt">Ortogonal</span></button>
+          <button id="bt2" class="tablinks" onclick="showTab(event,'Axonometric')"><span class="textBt">Axonometric</span></button>
+          <button id="bt3" class="tablinks" onclick="showTab(event,'Oblique')"><span class="textBt">Oblique</span></button>
           <button id="bt4" class="tablinks" value="perspective"
-            onclick="showTab(event,'Perspective'); radioClicked(event);">Perspective</button>
+            onclick="showTab(event,'Perspective'); radioClicked(event);"><span class="textBt">Perspective</span></button>
         </div>
 
         <div id="Ortogonal" class="tabops">
-          <input type="radio" id="ortRadio1" name="ortotype" value="principal">Principal<br>
-          <input type="radio" id="ortRadio2" name="ortotype" value="plant">Plant<br>
-          <input type="radio" id="ortRadio3" name="ortotype" value="rightside">Right Side<br>
+          <input type="radio" id="ortRadio1" name="ortotype" value="principal"><span class="textBt">Principal</span><br>
+          <input type="radio" id="ortRadio2" name="ortotype" value="plant"><span class="textBt">Plant</span><br>
+          <input type="radio" id="ortRadio3" name="ortotype" value="rightside"><span class="textBt">Right Side</span><br>
         </div>
 
         <div id="Axonometric" class="tabops">
-          <input type="radio" id="axoRadio1" name="axotype" value="isometric">Isometry<br>
-          <input type="radio" id="axoRadio2" name="axotype" value="dimetric">Dimetry<br>
-          <input type="radio" id="axoRadio3" name="axotype" value="trimetric">Trimetry<br>
-          <input type="radio" id="axoRadio4" name="axotype" value="freeA">Free
+          <input type="radio" id="axoRadio1" name="axotype" value="isometric"><span class="textBt">Isometry</span><br>
+          <input type="radio" id="axoRadio2" name="axotype" value="dimetric"><span class="textBt">Dimetry</span><br>
+          <input type="radio" id="axoRadio3" name="axotype" value="trimetric"><span class="textBt">Trimetry</span><br>
+          <input type="radio" id="axoRadio4" name="axotype" value="freeA"><span class="textBt">Free</span>
+          <div style=" width: 100%; text-align: center;">
+
           <div class="gamma" id="gammaContainer">
             <datalist id="0mark">
               <option value="0">
             </datalist>
-            <span style="display: table-cell; font-size: 25px; padding-left: 30px;">&gamma;</span>
+            <span style="display: table-cell; font-size: 100%;">&gamma;</span>
             <input type="range" min="-180" max="180" value="0" step="0.01" id="gammaSlider" list="0mark"
               style="vertical-align: middle;">
           </div>
           <div class="gamma" id="thetaContainer">
-            <span style="display: table-cell; font-size: 25px; padding-left: 30px;">&theta;</span>
+            <span style="display: table-cell; font-size: 100%;">&theta;</span>
             <input type="range" min="-180" max="180" value="0" step="0.01" id="thetaSlider" list="0mark"
               style="vertical-align: middle;"><span></span>
           </div>
+
+        </div>
+
         </div>
 
         <div id="Oblique" class="tabops">
@@ -187,13 +206,13 @@ void main() {
             </datalist>
             <span style="display: table-cell; vertical-align: middle; font-size: 25px;">l</span>
             <input type="range" min="0" max="1" value="0.5" step="0.01" id="lSlider" list="lMark"
-              style="vertical-align: middle;">
+              style="vertical-align: middle; outline: none;">
           </div>
           <div class="alpha" id="alphaContainer">
             <span
               style="display: table-cell; vertical-align: middle; font-size: 25px;">&alpha;</span>
             <input type="range" min="-180" max="180" value="0" step="0.01" id="alphaSlider" list="alphaMark"
-              style="vertical-align: middle;">
+              style="vertical-align: middle;outline: none;">
           </div>
         </div>
 
