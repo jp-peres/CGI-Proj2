@@ -4,6 +4,7 @@ var gl;
 var instances = [];
 var nInstances = 0;
 
+var mainBox;
 // Slider vars
 var gammaSlider, thetaSlider, lSlider, alphaSlider, dSlider,  e1Slider, e2Slider;
 // Radio button vars
@@ -32,6 +33,7 @@ var wiredOn;
 var canvas;
 var program;
 var countScale = 1;
+var viewportAreaPercent = 0.45;
 
 
 window.onresize = function () {
@@ -119,23 +121,24 @@ function generateEventListeners() {
     e1Slider.addEventListener("input",updateQuadric);
     e2Slider = document.getElementById("e2Slider");
     e2Slider.addEventListener("input",updateQuadric);
+    mainBox = document.getElementById("mainBox");
 }
 
 function generateViewPort() {
     var height = window.innerHeight;
     var width = window.innerWidth;
-    var zoomFactor = 1*countScale; 
-    var s = Math.min(width, height);
-    var aRatio = width / (height*zoomFactor);
+    var zoomFactor = 1*countScale;
+    var s = Math.min(width, height *viewportAreaPercent);
+    var aRatio = width / height;
     if (s == width) {
-        mProjection = ortho(-2/zoomFactor, 2/zoomFactor, -2 * aRatio, 2 * aRatio, -10, 10);
+        mProjection = ortho(-2/zoomFactor, 2/zoomFactor, (-2 * viewportAreaPercent * aRatio)/zoomFactor, (2 * viewportAreaPercent * aRatio)/zoomFactor, -10, 10);
     }
     else {
-        mProjection = ortho(-2 * aRatio, 2 * aRatio, -2/zoomFactor, 2/zoomFactor, -10, 10);
+        mProjection = ortho((-2 * aRatio )/zoomFactor , (2 * aRatio)/zoomFactor, (-2 * viewportAreaPercent)/zoomFactor, (2 * viewportAreaPercent)/zoomFactor, -10, 10);
     }
     canvas.width = document.body.clientWidth;
-    canvas.height = height;
-    gl.viewport(0, 0, canvas.width , height);
+    canvas.height = height*viewportAreaPercent;
+    gl.viewport(0, 0, width, height*viewportAreaPercent);
 }
 
 function initializeObjects() {
@@ -407,18 +410,26 @@ function keyPressed(ev) {
         case "a":
             currentPrimitiveIndex = currentPrimitiveIndex - 1 < 0 ? nrOfPrimitives - 1 : currentPrimitiveIndex - 1;
             instances[nInstances - 1].p = wiredOn ? primitives[currentPrimitiveIndex].w : primitives[currentPrimitiveIndex].f;
-            if (currentPrimitiveIndex == nrOfPrimitives - 1)
+            if (currentPrimitiveIndex == nrOfPrimitives - 1){
                 superOps.style.display = "block";
-            else
+                mainBox.style.borderBottom = "2px dashed lightseagreen";
+            }
+            else {
                 superOps.style.display = "none";
+                mainBox.style.borderBottom= "2px solid lightseagreen";
+            }
             break;
         case "d":
             currentPrimitiveIndex = ((currentPrimitiveIndex + 1) % nrOfPrimitives);
             instances[nInstances - 1].p = wiredOn ? primitives[currentPrimitiveIndex].w : primitives[currentPrimitiveIndex].f;
-            if (currentPrimitiveIndex == nrOfPrimitives - 1)
+            if (currentPrimitiveIndex == nrOfPrimitives - 1){
                 superOps.style.display = "block";
-            else
+                mainBox.style.borderBottom = "2px dashed lightseagreen";
+            }
+            else {
                 superOps.style.display = "none";
+                mainBox.style.borderBottom = "2px solid lightseagreen";
+            }
             break;
         case "+":
             zoomIn(0.01);
