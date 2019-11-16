@@ -349,12 +349,7 @@ function alphaLChanged() {
 function perspectiveView() {
     let d = Number(dSlider.value);
     let auxView = mat4();
-    if (d == 1) {
-        auxView[3][2] = -1;
-    }
-    else {
-        auxView[3][2] = -1 / d;
-    }
+    auxView[3][2] = -1 / d;
     mView = auxView;
 }
 
