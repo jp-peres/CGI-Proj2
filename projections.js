@@ -7,49 +7,55 @@
  *
  */
 
-// Webgl vars
+/*
+ * Webgl vars
+ */
 var gl;
 var canvas;
 var program;
-
-// Old program vars
 var instances = [];
 var nInstances = 0;
 
+
+/*
+ * User interface variables
+ */
 // Var used to change dashed to filled border when changing to superquadric
 var mainBox;
 // Vars used to change bculling and zbuffer text values
 var zBuffVal, bcullingVal;
 // Slider vars
 var gammaSlider, thetaSlider, lSlider, alphaSlider, dSlider, e1Slider, e2Slider;
-// Radio button vars
-var ortRadio1, ortRadio2, ortRadio3, axoRadio1, axoRadio2, axoRadio3, axoRadio4, oblRadio1, oblRadio2, oblRadio3, perspective;
 // Container paragraphs (to hide sliders)
-var gammaContainer, thetaContainer, lContainer, alphaContainer, superOps, wrap;
-// Current selected primitive
-var currentSelectedPrimitive;
-// Uniform location vars
-var uProj, uModel, uView;
+var gammaContainer, thetaContainer, lContainer, alphaContainer, superOps;
+// Vars used to change from each projection tab
+var currentUsedTab;
+var currentUsedTabOps;
 // BackFace culling and zBuffer flags
 var zBufferEnabled, faceCullingEnabled;
+// filledOn = filledDraw,  !filledOn = wireFrameDraw
+var filledOn;
+// Area in percentage that the viewport occupies in the window
+var viewportAreaPercent = 0.45;
 
-// mView var
+
+/*
+ * Projections vars
+ */
+// mView
 var mView = mat4();
-// mProjection var
+// mProjection
 var mProjection;
-// Array with all the draw primitives wired and filled (cube, sphere, bunny, etc)
+// Array with all the draw primitives (cube, sphere, bunny, etc)
 var primitives = [];
 // Index of the selected primitive at the moment
 var currentPrimitiveIndex = 0;
-// Total number of object primitives
+// Total number of object primitives 
 var nrOfPrimitives = 6;
-// Wireframe on = true or Filled = false
-var wiredOn;
-
-// Auxiliary var for zoomScale
+// Uniform location vars
+var uProj, uModel, uView;
+// Auxiliary var for zoomFactor
 var countScale = 1;
-// Area in percentage that the viewport occupies in the window
-var viewportAreaPercent = 0.45;
 
 
 window.onresize = function () {
@@ -61,10 +67,16 @@ window.onload = function init() {
 
     gl = WebGLUtils.setupWebGL(canvas);
     if (!gl) { alert("WebGL isn't available"); }
+
+    // Generate all event listeners
     generateEventListeners();
+    // Initializes all objects
     initializeObjects();
+    // Fills the array of draw primitives
     fillArrayPrimitives();
+    // Generates the initial viewport
     generateViewPort();
+    // Sets the initial state of the program
     initialProgramState();
 
     gl.clearColor(0.38, 0.38, 0.38, 1.0);
@@ -73,78 +85,14 @@ window.onload = function init() {
     gl.useProgram(program);
 
     uModel = gl.getUniformLocation(program, "mModel");
-
     uProj = gl.getUniformLocation(program, "mProjection");
-
     uView = gl.getUniformLocation(program, "mView");
 
     render();
 }
 
-function initialProgramState() {
-    document.getElementById("bt2").click();
-    document.getElementById("axoRadio2").click();
-    faceCullingEnabled = false;
-    zBufferEnabled = false;
-    wiredOn = true;
-    currentSelectedPrimitive = primitives[currentPrimitiveIndex].w;
-    instances.push({ t: mat4(), p: currentSelectedPrimitive });
-    nInstances++;
-}
-
-function generateEventListeners() {
-
-    // Get html elements 
-    ortRadio1 = document.getElementById("ortRadio1");
-    ortRadio2 = document.getElementById("ortRadio2");
-    ortRadio3 = document.getElementById("ortRadio3");
-    axoRadio1 = document.getElementById("axoRadio1");
-    axoRadio2 = document.getElementById("axoRadio2");
-    axoRadio3 = document.getElementById("axoRadio3");
-    axoRadio4 = document.getElementById("axoRadio4");
-    oblRadio1 = document.getElementById("oblRadio1");
-    oblRadio2 = document.getElementById("oblRadio2");
-    oblRadio3 = document.getElementById("oblRadio3");
-    projTab = document.getElementById("projTab");
-    gammaContainer = document.getElementById("gammaContainer");
-    thetaContainer = document.getElementById("thetaContainer");
-    alphaContainer = document.getElementById("alphaContainer");
-    lContainer = document.getElementById("lContainer");
-    gammaSlider = document.getElementById("gammaSlider");
-    thetaSlider = document.getElementById("thetaSlider");
-    wrap = document.getElementById("wrap");
-    lSlider = document.getElementById("lSlider");
-    dSlider = document.getElementById("dSlider");
-    alphaSlider = document.getElementById("alphaSlider");
-    superOps = document.getElementById("superOps");
-    e1Slider = document.getElementById("e1Slider");
-    e2Slider = document.getElementById("e2Slider");
-    mainBox = document.getElementById("mainBox");
-    zbuffVal = document.getElementById("zbuffVal");
-    bcullingVal = document.getElementById("bcullingVal");
-
-    // Generate all event listeners
-    addEventListener("keypress", keyPressed);
-    thetaSlider.addEventListener("input", gammaThetaChanged);
-    gammaSlider.addEventListener("input", gammaThetaChanged);
-    alphaSlider.addEventListener("input", alphaLChanged);
-    lSlider.addEventListener("input", alphaLChanged);
-    ortRadio1.addEventListener("click", radioClicked);
-    ortRadio2.addEventListener("click", radioClicked);
-    ortRadio3.addEventListener("click", radioClicked);
-    axoRadio1.addEventListener("click", radioClicked);
-    axoRadio2.addEventListener("click", radioClicked);
-    axoRadio3.addEventListener("click", radioClicked);
-    axoRadio4.addEventListener("click", radioClicked);
-    oblRadio1.addEventListener("click", radioClicked);
-    oblRadio2.addEventListener("click", radioClicked);
-    oblRadio3.addEventListener("click", radioClicked);
-    dSlider.addEventListener("input", dChanged);
-    canvas.addEventListener("wheel", mouseWheel);
-    e1Slider.addEventListener("input", updateQuadric);
-    e2Slider.addEventListener("input", updateQuadric);
-}
-
+// Generates viewport according to windowsize and applies the current zoomFactor
+// Used for resize eventlistener and zoom eventlistener.
 function generateViewPort() {
     var height = window.innerHeight;
     var width = window.innerWidth;
@@ -162,6 +110,59 @@ function generateViewPort() {
     gl.viewport(0, 0, width, height * viewportAreaPercent);
 }
 
+// Sets initial program state to Axonometric tab, and sets the initial projection as dimetric projection
+// of the cube object with zbuffer off and backface culling off
+function initialProgramState() {
+    document.getElementById("bt2").click();
+    document.getElementById("axoRadio2").click();
+    faceCullingEnabled = false;
+    zBufferEnabled = false;
+    filledOn = false;
+    instances.push({ t: mat4(), p:  primitives[currentPrimitiveIndex] });
+    nInstances++;
+}
+
+function generateEventListeners() {
+    // Get all html elements that will be needed
+    gammaContainer = document.getElementById("gammaContainer");
+    thetaContainer = document.getElementById("thetaContainer");
+    alphaContainer = document.getElementById("alphaContainer");
+    lContainer = document.getElementById("lContainer");
+    gammaSlider = document.getElementById("gammaSlider");
+    thetaSlider = document.getElementById("thetaSlider");
+    lSlider = document.getElementById("lSlider");
+    dSlider = document.getElementById("dSlider");
+    alphaSlider = document.getElementById("alphaSlider");
+    superOps = document.getElementById("superOps");
+    e1Slider = document.getElementById("e1Slider");
+    e2Slider = document.getElementById("e2Slider");
+    mainBox = document.getElementById("mainBox");
+    zbuffVal = document.getElementById("zbuffVal");
+    bcullingVal = document.getElementById("bcullingVal");
+
+    // Generate all event listeners needed
+    addEventListener("keypress", keyPressed);
+    canvas.addEventListener("wheel", mouseWheel);
+    document.getElementById("ortRadio1").addEventListener("click", radioClicked);
+    document.getElementById("ortRadio2").addEventListener("click", radioClicked);
+    document.getElementById("ortRadio3").addEventListener("click", radioClicked);
+    document.getElementById("axoRadio1").addEventListener("click", radioClicked);
+    document.getElementById("axoRadio2").addEventListener("click", radioClicked);
+    document.getElementById("axoRadio3").addEventListener("click", radioClicked);
+    document.getElementById("axoRadio4").addEventListener("click", radioClicked);
+    document.getElementById("oblRadio1").addEventListener("click", radioClicked);
+    document.getElementById("oblRadio2").addEventListener("click", radioClicked);
+    document.getElementById("oblRadio3").addEventListener("click", radioClicked);
+    thetaSlider.addEventListener("input", gammaThetaChanged);
+    gammaSlider.addEventListener("input", gammaThetaChanged);
+    alphaSlider.addEventListener("input", alphaLChanged);
+    lSlider.addEventListener("input", alphaLChanged);
+    dSlider.addEventListener("input", dChanged);
+    e1Slider.addEventListener("input", updateQuadric);
+    e2Slider.addEventListener("input", updateQuadric);
+}
+
+// Initializes all objects
 function initializeObjects() {
     cubeInit(gl);
     sphereInit(gl);
@@ -171,43 +172,42 @@ function initializeObjects() {
     superInit(gl, e1Slider.value, e2Slider.value);
 }
 
+// Eventlistener for superquadric 
+// reinitializes superquadric object with new values
 function updateQuadric() {
     superInit(gl, e1Slider.value, e2Slider.value);
 }
 
-// TODO: to be refactored
+// Fills the array of drawing primitives with
+// each draw function of each object
 function fillArrayPrimitives() {
-    primitives.push({ w: cubeDrawWireFrame, f: cubeDrawFilled });
-    primitives.push({ w: sphereDrawWireFrame, f: sphereDrawFilled });
-    primitives.push({ w: cylinderDrawWireFrame, f: cylinderDrawFilled });
-    primitives.push({ w: torusDrawWireFrame, f: torusDrawFilled });
-    primitives.push({ w: bunnyDrawWireFrame, f: bunnyDrawFilled });
-    primitives.push({ w: superWireFrame, f: superFilled })
+    primitives.push(cubeDraw);
+    primitives.push(sphereDraw);
+    primitives.push(cylinderDraw);
+    primitives.push(torusDraw);
+    primitives.push(bunnyDraw);
+    primitives.push(superDraw);
 }
 
-// Eventlistener func for all radio buttons
+// Eventlistener for all radio buttons
 function radioClicked(evt) {
     switch (evt.target.value) {
-        //Ortogonal
         case "principal":
         case "rightside":
         case "plant":
             ortogonalViews(evt.target.value);
             break;
-        //Axonometric
         case "isometric":
         case "dimetric":
         case "trimetric":
         case "freeA":
             axonometricViews(evt.target.value);
             break;
-        //Oblique:
         case "cavalier":
         case "cabinet":
-        case "freeO": // --- TODO alpha not working properly?
+        case "freeO":
             obliqueViews(evt.target.value);
             break;
-        //Perspective: --- TODO
         case "perspective":
             perspectiveView();
             break;
@@ -215,7 +215,7 @@ function radioClicked(evt) {
 }
 
 //
-// Ortogonal projection func
+// Ortogonal projection function
 //
 function ortogonalViews(op) {
     var auxView = mat4();
@@ -231,11 +231,10 @@ function ortogonalViews(op) {
             break;
     }
     mView = auxView;
-    zoomPerspective();
 }
 
 //
-// Axonometric projection related funcs
+// Axonometric projection related functions
 //
 function axonometricViews(op) {
     if (op != "freeA") {
@@ -250,8 +249,8 @@ function axonometricViews(op) {
             setmViewAxonometric(42, 7);
             break;
         case "trimetric":
-            var angleA = 54 + (16 / 60);
-            var angleB = 23 + (16 / 60);
+            let angleA = 54 + (16 / 60);
+            let angleB = 23 + (16 / 60);
             setmViewAxonometric(angleA, angleB);
             break;
         case "freeA":
@@ -260,49 +259,53 @@ function axonometricViews(op) {
             gammaThetaChanged();
             break;
     }
-    zoomPerspective();
 }
 
+// Auxiliary function to convert radians to degrees
 function degrees(radianVal) {
     return radianVal * 180 / Math.PI;
 }
 
+// Calculates theta with given A and B angles
 function getTheta(angleA, angleB) {
-    var radianA = radians(angleA);
-    var radianB = radians(angleB);
-    var num = (Math.atan(Math.sqrt(Math.tan(radianA) / Math.tan(radianB))) - (Math.PI / 2));
-    var theta = degrees(num);
+    let radianA = radians(angleA);
+    let radianB = radians(angleB);
+    let num = (Math.atan(Math.sqrt(Math.tan(radianA) / Math.tan(radianB))) - (Math.PI / 2));
+    let theta = degrees(num);
     return theta;
 }
 
+// Calculates game with given A and B angles
 function getGamma(angleA, angleB) {
-    var radianA = radians(angleA);
-    var radianB = radians(angleB);
-    var aux = Math.asin(Math.sqrt(Math.tan(radianA) * Math.tan(radianB)));
-    var gamma = degrees(aux);
+    let radianA = radians(angleA);
+    let radianB = radians(angleB);
+    let aux = Math.asin(Math.sqrt(Math.tan(radianA) * Math.tan(radianB)));
+    let gamma = degrees(aux);
     return gamma;
 }
 
+// Calculates axonometric projection with angle A and B
 function setmViewAxonometric(angleA, angleB) {
-    var auxView = mat4();
-    var theta = getTheta(angleA, angleB);
-    var gamma = getGamma(angleA, angleB);
+    let auxView = mat4();
+    let theta = getTheta(angleA, angleB);
+    let gamma = getGamma(angleA, angleB);
     mView = mult(auxView, mult(rotateX(gamma), rotateY(theta)));
 }
 
-// EventListener for sliders
+// Eventlistener for gamma and theta sliders
+// Calculates axonometric projection with given theta and gamma from sliders
 function gammaThetaChanged() {
-    var auxView = mat4();
-    var currGamma = Number(gammaSlider.value);
-    var currTheta = Number(thetaSlider.value);
+    let auxView = mat4();
+    let currGamma = Number(gammaSlider.value);
+    let currTheta = Number(thetaSlider.value);
     mView = mult(auxView, mult(rotateX(currGamma), rotateY(currTheta)));
-    zoomPerspective();
 }
 
 //
-// Oblique projection related funcs
+// Oblique projection related function
 //
 function obliqueViews(op) {
+    // Hides sliders if not free op
     if (op != "freeO") {
         alphaContainer.style.display = "none";
         lContainer.style.display = "none";
@@ -320,18 +323,11 @@ function obliqueViews(op) {
             alphaLChanged();
             break;
     }
-    zoomPerspective();
 }
 
-function alphaLChanged() {
-    var currL = Number(lSlider.value);
-    var currAlpha = Number(alphaSlider.value);
-    mView = mObl(currL, currAlpha);
-    zoomPerspective();
-}
-
+// Calculates oblique projection
 function mObl(l, alpha) {
-    var auxView = mat4();
+    let auxView = mat4();
 
     auxView[0][2] = -l * Math.cos(radians(alpha));
     auxView[1][2] = -l * Math.sin(radians(alpha));
@@ -339,12 +335,20 @@ function mObl(l, alpha) {
     return auxView;
 }
 
+// Eventlistener for oblique slider
+// Calculates oblique projection with given l and alpha from sliders 
+function alphaLChanged() {
+    var currL = Number(lSlider.value);
+    var currAlpha = Number(alphaSlider.value);
+    mView = mObl(currL, currAlpha);
+}
+
 //
-// Perspective projection related funcs
+// Perspective projection related function
 //
 function perspectiveView() {
-    var d = Number(dSlider.value);
-    var auxView = mat4();
+    let d = Number(dSlider.value);
+    let auxView = mat4();
     if (d == 1) {
         auxView[3][2] = -1;
     }
@@ -352,125 +356,88 @@ function perspectiveView() {
         auxView[3][2] = -1 / d;
     }
     mView = auxView;
-    zoomPerspective();
 }
 
+// Eventlistener for perspective slider
+// Calculates perspective view with given d slider
 function dChanged() {
     perspectiveView();
 }
 
-// TODO: Will refactor this function
-// Function to hide tab contents and show selected tab content 
-function showTab(evt, op) {
-    var i, tabcontent, tablinks;
-
-    tabcontent = document.getElementsByClassName("tabops");
-    for (i = 0; i < tabcontent.length; i++) {
-        tabcontent[i].style.display = "none";
+//
+// Function to hide old tab contents and show the new selected tab contents 
+//
+function showProjectionTab(evt, op) {
+    let i;
+    let isChecked = false;
+    if (currentUsedTab == null || currentUsedTab.id == evt.currentTarget.id){
+        evt.currentTarget.className = evt.currentTarget.className.replace(" active","");
+        evt.currentTarget.className += " active";
+        currentTabOps = document.getElementById(op);
+        currentTabOps.style.display = "block";
+        currentUsedTab = evt.currentTarget;
     }
-
-    tablinks = document.getElementsByClassName("tablinks");
-    for (i = 0; i < tablinks.length; i++) {
-        tablinks[i].className = tablinks[i].className.replace(" active", "");
-    }
-
-    var currentTabOps = document.getElementById(op);
-    currentTabOps.style.display = "block";
-    evt.currentTarget.className += " active";
-    var isChecked = false;
-    if (currentTabOps.id != "Perspective") {
-        for (i = 0; i < currentTabOps.children.length; i++) {
-            if (currentTabOps.children[i].checked) {
-                currentTabOps.children[i].click();
-                isChecked = true;
-                break;
+    else {
+        currentUsedTab.className = currentUsedTab.className.replace(" active","");
+        currentUsedTab = evt.currentTarget;
+        currentUsedTab.className += " active";
+        currentTabOps.style.display = "none";
+        currentTabOps = document.getElementById(op);
+        currentTabOps.style.display = "block";
+        if (currentTabOps.id != "Perspective"){
+            for ( i = 0; i < currentTabOps.children.length; i++)
+            {
+                if (currentTabOps.children[i].checked) {
+                    currentTabOps.children[i].click();
+                    isChecked = true;
+                    break;
+                }
             }
-        }
-        if (!isChecked) {
-            currentTabOps.children[0].checked = true;
-            currentTabOps.children[0].click();
+            // if no radio button yet selected pick the first one
+            if (!isChecked) {
+                currentTabOps.children[0].checked = true;
+                currentTabOps.children[0].click();
+            }
         }
     }
 }
 
+// Eventlistener for mousewheel
 function mouseWheel(ev) {
     zoomIn(ev.deltaY);
 }
-
+// Applies zoomin or zoomout (using generateViewPort since it uses the zoomFactor by default)
 function zoomIn(ev) {
-    var scaleStep = 0.1;
+    let scaleStep = 0.1;
     if (ev < 0 && countScale - scaleStep > 0.1) {
         countScale -= scaleStep;
     }
     else if (ev > 0) {
         countScale += scaleStep;
     }
-    zoomPerspective();
-}
-
-function zoomPerspective() {
     generateViewPort();
 }
 
+// Keys eventListener
 function keyPressed(ev) {
     switch (ev.key) {
         case "z":
-            zBufferEnabled = !zBufferEnabled;
-            if (zBufferEnabled) {
-                gl.enable(gl.DEPTH_TEST);
-                zbuffVal.innerHTML = " ON";
-                zbuffVal.style.color = "limeGreen";
-            }
-            else {
-                gl.disable(gl.DEPTH_TEST);
-                zbuffVal.innerHTML = " OFF";
-                zbuffVal.style.color = "red";
-            }
+            zBufferChanged();
             break;
         case "b":
-            faceCullingEnabled = !faceCullingEnabled;
-            if (faceCullingEnabled) {
-                gl.enable(gl.CULL_FACE);
-                bcullingVal.innerHTML = " ON";
-                bcullingVal.style.color = "limeGreen";
-            }
-            else {
-                gl.disable(gl.CULL_FACE);
-                bcullingVal.innerHTML = "OFF";
-                bcullingVal.style.color = "red";
-            }
+            backFaceCullingChanged();
             break;
         case "w":
-            wiredOn = true;
-            instances[nInstances - 1].p = primitives[currentPrimitiveIndex].w;
+            filledOn = false;
             break;
         case "f":
-            wiredOn = false;
-            instances[nInstances - 1].p = primitives[currentPrimitiveIndex].f;
+            filledOn = true;
             break;
         case "a":
-            currentPrimitiveIndex = currentPrimitiveIndex - 1 < 0 ? nrOfPrimitives - 1 : currentPrimitiveIndex - 1;
-            instances[nInstances - 1].p = wiredOn ? primitives[currentPrimitiveIndex].w : primitives[currentPrimitiveIndex].f;
-            if (currentPrimitiveIndex == nrOfPrimitives - 1) {
-                superOps.style.display = "block";
-                mainBox.style.borderBottom = "2px dashed lightseagreen";
-            }
-            else {
-                superOps.style.display = "none";
-                mainBox.style.borderBottom = "2px solid lightseagreen";
-            }
+            changeCurrentPrimitive(ev.key);
             break;
         case "d":
-            currentPrimitiveIndex = ((currentPrimitiveIndex + 1) % nrOfPrimitives);
-            instances[nInstances - 1].p = wiredOn ? primitives[currentPrimitiveIndex].w : primitives[currentPrimitiveIndex].f;
-            if (currentPrimitiveIndex == nrOfPrimitives - 1) {
-                superOps.style.display = "block";
-                mainBox.style.borderBottom = "2px dashed lightseagreen";
-            }
-            else {
-                superOps.style.display = "none";
-                mainBox.style.borderBottom = "2px solid lightseagreen";
-            }
+            changeCurrentPrimitive(ev.key);
             break;
         case "+":
             zoomIn(0.01);
@@ -481,13 +448,63 @@ function keyPressed(ev) {
     }
 }
 
+// Changes object primitive 
+// (if superquadric is selected displays its ops otherwise hides those ops)
+function changeCurrentPrimitive(key) {
+    if (key == "a")
+        currentPrimitiveIndex = currentPrimitiveIndex - 1 < 0 ? nrOfPrimitives - 1 : currentPrimitiveIndex - 1;
+    else
+        currentPrimitiveIndex = ((currentPrimitiveIndex + 1) % nrOfPrimitives);
+    instances[nInstances - 1].p = primitives[currentPrimitiveIndex];
+    // Displays the superquadric sliders or hides them
+    if (currentPrimitiveIndex == nrOfPrimitives - 1) {
+        superOps.style.display = "block";
+        mainBox.style.borderBottom = "2px dashed lightseagreen";
+    }
+    else {
+        superOps.style.display = "none";
+        mainBox.style.borderBottom = "2px solid lightseagreen";
+    }
+}
+
+// Enables or disables zBuffer
+function zBufferChanged() {
+    zBufferEnabled = !zBufferEnabled;
+    if (zBufferEnabled) {
+        gl.enable(gl.DEPTH_TEST);
+        zbuffVal.innerHTML = " ON";
+        zbuffVal.style.color = "limeGreen";
+    }
+    else {
+        gl.disable(gl.DEPTH_TEST);
+        zbuffVal.innerHTML = " OFF";
+        zbuffVal.style.color = "red";
+    }
+}
+
+// Enables or disables backFaceCulling
+function backFaceCullingChanged() {
+    faceCullingEnabled = !faceCullingEnabled;
+    if (faceCullingEnabled) {
+        gl.enable(gl.CULL_FACE);
+        bcullingVal.innerHTML = " ON";
+        bcullingVal.style.color = "limeGreen";
+    }
+    else {
+        gl.disable(gl.CULL_FACE);
+        bcullingVal.innerHTML = " OFF";
+        bcullingVal.style.color = "red";
+    }
+}
+
+// Render function
 function render() {
     gl.clear(gl.COLOR_BUFFER_BIT || gl.DEPTH_BUFFER_BIT);
     gl.uniformMatrix4fv(uView, false, flatten(mView));
     gl.uniformMatrix4fv(uProj, false, flatten(mProjection));
     for (var i = 0; i < nInstances; i++) {
         gl.uniformMatrix4fv(uModel, false, flatten(instances[i].t));
-        instances[i].p(gl, program);
+        instances[i].p(gl, program, filledOn);
     }
     requestAnimationFrame(render);
 }

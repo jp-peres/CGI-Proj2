@@ -1,0 +1,123 @@
+  /*
+   *
+   * Trabalho realizado por:
+   * 
+   * Sara Trafaria Nº 41693
+   * João Peres Nº 43820
+   *
+   */
+  
+    .infoDiv {
+      position: absolute;
+      color: white;
+      text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
+      padding: 10px 10px;
+    }
+
+    .zBuffer {
+      position: relative;
+      color: white;
+      text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
+      padding: 0px 10px;
+      top: -50px;
+    }
+
+    .wrapper {
+      width: 100%;
+      padding: 10px 0;
+      position: relative;
+      background-color: rgb(96.9, 96.9, 96.9);
+      margin: auto;
+    }
+
+    .glcanvas {
+      border: 2px solid lightseagreen;
+    }
+
+    .mainBox {
+      position: relative;
+      top: -42px;
+      margin: auto;
+      outline: none;
+      border-top: 2px solid lightseagreen;
+      border-right: 2px solid lightseagreen;
+      border-bottom: 2px solid lightseagreen;
+      border-left: 2px solid lightseagreen;
+      max-width: 378.5px;
+    }
+
+    .tab {
+      overflow: hidden;
+      border: 1px solid #ccc;
+      background-color: lightskyblue;
+    }
+
+    .tab button {
+      background-color: inherit;
+      float: left;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      transition: 0.3s;
+    }
+
+    .dClass {
+      text-align: center;
+    }
+
+    .tab button:hover {
+      background-color: #ddd;
+    }
+
+    .tab button.active {
+      background-color: lightsteelblue;
+    }
+
+    .tabops {
+      display: none;
+      padding: 10px 0;
+      border: 1px solid #ccc;
+      background-color: rgb(189, 228, 253);
+      border-top: none;
+      animation: fadeEffect 1s;
+    }
+
+    .gamma {
+      display: table-cell;
+      font-size: 25px;
+      margin: auto;
+      animation: fadeEffect 1s;
+    }
+
+    .alpha {
+      display: table-cell;
+      font-size: 25px;
+      margin: auto;
+      animation: fadeEffect 1s;
+    }
+
+    .superOps {
+      display: none;
+      position: relative;
+      top: -42px;
+      max-width: 378.5px;
+      border-right: 2px solid lightseagreen;
+      border-bottom: 2px solid lightseagreen;
+      border-left: 2px solid lightseagreen;
+      text-align: center;
+      vertical-align: middle;
+      margin: auto;
+      background-color: rgb(189, 228, 253);
+      animation: fadeEffect 1s;
+    }
+
+    @keyframes fadeEffect {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }

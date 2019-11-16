@@ -1,3 +1,12 @@
+/*
+ *
+ * Trabalho realizado por:
+ * 
+ * Sara Trafaria Nº 41693
+ * João Peres Nº 48320
+ *
+ */
+
 var superQ_points = [];
 var superQ_normals = [];
 var superQ_faces = [];
