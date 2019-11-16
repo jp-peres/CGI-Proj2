@@ -16,23 +16,32 @@ João Peres Nº 43820
       text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
       padding: 10px 10px;
     }
-
-    .zBuffer {
-      position: relative;
+      
+    .infoDivTexts {
+      position: absolute;
+      top: 30px;
+      left: 150px;
       color: white;
       text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
-      padding: 0px 10px;
-      top: -50px;
+      padding: 10px 10px;
     }
-
-    .objectDesign {
-      position: relative;
+     .infoDivBculling {
+      position: absolute;
+      opacity: 1.0;
+      top: 30px;
       color: white;
       text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
-      padding: 0px 10px;
-      top: -85px;
-      right: -1225px;
+      padding: 10px 10px;
     }
+      .infoDivZbuffer {
+      position: absolute;
+      opacity: 1.0;
+      top: 50px;
+      color: white;
+      text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
+      padding: 10px 10px;
+    }
+      
     .wrapper {
       width: 100%;
       padding: 10px 0;
@@ -47,7 +56,7 @@ João Peres Nº 43820
 
     .mainBox {
       position: relative;
-      top: -42px;
+      top: -6px;
       margin: auto;
       outline: none;
       border-top: 2px solid lightseagreen;
@@ -179,13 +188,14 @@ void main() {
   <title>Projections</title>
   <div class="mainDiv">
     <div class="infoDiv"><span>Change Primitive: press A or D</span></div>
+    <div class = "infoDivTexts" id="wireFrameText" style = "color:white;"></div>
+    <div class = "infoDivZbuffer" id="zBufferText" style = "color:red;"></div>
+    <div class = "infoDivBculling" id="bcullingText" style = "color:red;"></div>
     <canvas class="glcanvas" id="gl-canvas">
       Oops... your browser doesn't support the HTML5 canvas element"
     </canvas>
-    <div class="zBuffer" id="Bculling"><span>Bculling:</span><span id="bcullingVal" style="color: red;"> OFF</span></div>
-    <div class="zBuffer" id="zbuffDiv"><span>Zbuffer:</span><span id="zbuffVal" style="color: red;"> OFF</span></div>
-    <div class="objectDesign" id="wireObjDiv"><span>WireFrame:</span><span id="wireObjVal" style="color: limeGreen;"> ON</span></div>
-    <div class="objectDesign" id="filledObjDiv"><span>Filled:</span><span id="filledObjVal" style="color: red;"> OFF</span></div>
+<body>
+    <title>Fireworks</title>
     <div class="mainBox" id="mainBox">
       <div class="tab" id="projTab">
         <button id="bt1" class="tablinks" onclick="showTab(event,'Ortogonal')" style="outline: none;">Ortogonal</button>
